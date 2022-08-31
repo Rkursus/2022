@@ -1,0 +1,32 @@
+---
+output: html_document
+---
+
+```{r echo = F, message=F}
+library(networkD3) #fig.width = 720, fig.height = 260
+
+data(MisLinks, MisNodes)
+forceNetwork(Links = MisLinks, Nodes = MisNodes, Source = "source",
+             Target = "target", Value = "value", NodeID = "name",
+             Group = "group", opacity = 0.8, height = 260, width = 720)
+
+
+# library(gapminder)
+# library(gganimate)
+# library(tidyverse)
+# 
+# gapminder <- gapminder %>% 
+#   mutate(kontinent = fct_recode(continent, 'Aafrika' = 'Africa', 'Ameerikad' = 'Americas', 'Aasia' = 'Asia', 'Euroopa' = 'Europe', 'Okeaania' = 'Oceania'))
+# 
+# ggplot(gapminder, aes(gdpPercap/1000, lifeExp, size = pop, colour = country, facet = kontinent)) +
+#   geom_point(alpha = 0.7, show.legend = F) +
+#   scale_colour_manual(values = country_colors) +
+#   scale_size(range = c(2, 12)) +
+#   scale_x_log10() +
+#   facet_grid(cols = vars(kontinent)) +
+#   # Here comes the gganimate specific bits
+#   labs(title = 'Aasta: {frame_time}', x = 'SKP per capita (tuhandetes)', y = 'oodatav eluiga') +
+#   transition_time(year) +
+#   ease_aes('linear')
+
+```

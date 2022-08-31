@@ -1,0 +1,271 @@
+---
+title: | 
+  | Rakendustarkvara: R 
+  | 8. praktikum^[Praktikumijuhendid põhinevad aine MTMS.01.092 Rakendustarkvara: R (2 EAP) materjalidel, mille autorid on Mait Raag ning Raivo Kolde]
+  
+output: 
+  html_document:
+    theme: null
+    number_sections: true
+---
+
+
+# Sõnetöötlus paketiga stringr
+
+R- i baaspaketiga on kaasas mitmeid sõnede töötlemise käske, näiteks `grep(.)` ja `substr(.)`; pikemat loetelu näeb, kui trükkida konsooli `?grep` ja `?substr`. Kahjuks nende käskude süntaks pole päris ühesugune ning mõned neist ei ole täielikult vektoriseeritud.
+<!--(nt `substr(.)` argumendid `start` ja `stop` ei tohi olla vektorid).   
+Võivad olla küll! Kui x on üks sõna, siis ei mõju lihtsalt grep funktsiooni 'pattern' ei tohi olla vektor -->
+```{r, eval=FALSE, include=FALSE}
+substr("abcdefghi", start = 2:3, stop = c(7, 4))
+substr(rep("abcdefghi", 2), start = 2:3, stop = c(7, 4))
+
+
+
+# mitmendas vektorielemendis esineb antud muster
+grep(pattern = "ab", x = c("bacb","habe", "kabe", "abab", "tere"))
+grep(pattern = c("be", "ab"), x = c("bacb","habe", "kabe", "abab", "tere"))
+grep(pattern = c("be", "ab", "be", "ab", "be"), x = c("bacb","habe", "kabe", "abab", "tere"))
+
+# Stringr paketis võib pattern olla vektor, aga peab klappima teise vektori dimensiooniga
+str_detect(pattern = "ab", string = c("bacb","habe", "kabe", "abab", "tere"))
+str_detect(pattern = c("be", "ab"), string = c("bacb","habe", "kabe", "abab", "tere"))
+# sama pikka pattern'it vaja kui tekstidega vektor
+str_detect(pattern = c("be", "ab", "be", "ab", "be"), string = c("bacb","habe", "kabe", "abab", "tere"))
+
+str_match(pattern = "ab", string = c("bacb","habe", "kabe", "abab", "tere"))
+str_match_all(pattern = c(  "ab"), string = c("bacb","habe", "kabe", "abab", "tere"))
+
+```
+Pakett **stringr** proovib seda puudust kõrvaldada, pakkudes sarnase süntaksiga rohkem vektoriseeritud käske (tegemist on nn *wrapper*-funktsioonidega baaspaketi sõnetöötluskäskudele).
+
+```{r,results='hide', warning=FALSE}
+#install.packages("stringr") #  kui paketti arvutis veel pole
+library(stringr) # paketi aktiveerimine
+```
+
+ 
+
+## Sõne pikkus, sõnede kokkukleepimine ja eraldamine, alamsõne eraldamine
+
+* Sõnede **pikkust** saab teada käsuga `str_length(.)`. 
+* Sõnesid saab **kokku kleepida** üheks käsuga `str_c(.)`, millel saab argumendiga `sep` määrata, milline sümbol pannakse kokkukleebitavate sõnede vahele. Kui käsule `str_c(.)` kirjutada argumendi `collapse` väärtuseks mingi sümbol, siis kleebitakse kõik sõned üheks ainsaks sõneks, mis on selle sümboliga eraldatud. 
+* Sõne saab **tükeldada** käsuga `str_split(.)`, mille argumendiga `pattern` saab määrata, mis on tükkide eraldaja. Selle käsu tulemusena tekib **list** , mida saab vektoriks muuta käsuga `unlist(.)`, kui aga lisada käsku argument `simplify = TRUE` on tulemuseks **maatriks**. Kui `str_split(.)` käsule anda `pattern = ""`, siis tükeldatakse sõna üksikuteks tähtedeks.
+* **Alamsõne eraldamiseks** on stringr paketis käsk `str_sub(.)`, mille argumentidega `start` ja `end` saab määrata alamsõne alguse ja lõpu tärgi indeksid. Andes neile argumentidele negatiivsed indeksi väärtused alustatakse loendamist sõne lõpust st indeks `-2` märgib sõne eelviimast kohta.
+```{r}
+sõnad <- c("Õun", "Apelsin", "Porrulauk", NA, "")
+str_length(sõnad)
+str_c(sõnad, 1:5, sep = "=")
+(x <- str_c(sõnad, 1:5, sep = "=", collapse = ". "))
+(x <- str_c(str_replace_na(sõnad), 1:5, sep = "=", collapse = ". "))
+str_split(x, ". ")
+unlist(str_split(x, ". "))
+str_split(sõnad, "")
+lause1 <- "see ja teine ja kolmas ja neljas"; lause2 <- "üks või kaks või kolm"
+str_split(c(lause1, lause2), c("ja", "või"))
+str_sub(sõnad, 1:5, 3:7)
+str_sub(sõnad, end = -3)
+```
+
+### Ülesanded
+1. Loe sisse Massatchusettsi andmestik:\
+`link <- "https://github.com/Rkursus/2021/raw/master/data/"`\
+`mass <- read.table(str_c(link, "mass.txt"), sep = "\t", header = T)`\
+Andmetabelis on veerus OCCP iga inimese amet, sealjuures kolme esimese tähega on kodeeritud vastav valdkond; näiteks kõik puhastusteenustega seotud ametid algavad tähtedega CLN. Mitu erinevat valdkonda on selles andmetabelis?
+1. Kasutades sama tunnnust (`OCCP`) lisa andmestikku uus veerg `OCCP1`, mille väärtused oleks samad kui `OCCP`-l, kuid töötutel oleks tunnuse väärtus kujul *"UNE-UNEMPLOYED, LAST WORKED 5 YEARS AGO OR EARLIER OR NEVER"*.
+```{r, eval=FALSE, include=FALSE}
+mass <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", sep = "\t", header=T)
+
+
+link <- "https://github.com/Rkursus/2021/raw/master/data/"
+mass <- read.table(str_c(link, "mass.txt"), sep = "\t", header = T)
+
+
+# 1
+valdkond <- str_sub(andmed$OCCP, 1, 3)
+table(valdkond, useNA = "i")
+length(unique(valdkond))
+
+# 2
+andmed$OCCP1 <- as.character(andmed$OCCP)
+andmed$OCCP1[valdkond == "UNE" & !is.na(valdkond)] <- str_c("UNE", andmed$OCCP1[valdkond == "UNE" & !is.na(valdkond)], sep = "-" )
+
+
+# kui lööks lahku (tööötud saavad NA siin)
+tingimus <- valdkond != "UNE" & !is.na(valdkond)
+andmed[ , c("kood", "selgitus") ] <- NA
+andmed[tingimus, c("kood", "selgitus") ]  <-   str_split(andmed$OCCP[tingimus], "-", simplify = T, n = 2) 
+head(andmed)
+ 
+```
+
+\pagebreak
+
+
+
+
+## Alamsõne otsimine ja muutmine
+Et teada saada, kas üks sõne sisaldub teises sõnes, saab kasutada käsku `str_detect(.)` argumendiga `pattern`. Sisaldumiste esinemiste kokkuloendamiseks sobib käsk `str_count(.)`. Juhul, kui on soov otsitava alamsõne teksti kujul leida ja väljastada, saab kasutada käsku `str_extract(.)`. Et teada saada, millisel positsioonil asub otsitav alamsõne, võiks kasutada käsku `str_locate(.)`, mis tagastab kõige esimesel positsioonil leitud alamsõne (kui sellist alamsõne üldse leidub) algus- ja lõpuindeksid **matrix**-tüüpi objektina. Kui tahame kätte saada kõigil positsioonidel olevate alamsõnede algus- ja lõpuindeksid, sobib käsk `str_locate_all(.)`, mis tagastab listi.
+```{r}
+# Vaatame üle oma vektori
+sõnad
+str_detect(sõnad, "r")
+str_count(sõnad, "r")
+str_extract(sõnad, "r")
+str_extract_all(sõnad, "r")
+str_locate(sõnad, "r")
+str_locate_all(sõnad, "r")
+```
+
+Mõnikord on sõnede alguses või lõpus liiga palju tühikuid, neid saab eemaldada käsuga `str_trim(.)`. Käsuga `str_pad(.)` aga saab sõne algusesse või lõppu panna tühikuid (või muid sümboleid) juurde, nii et sõne saavutaks argumendiga `width` ette antud pikkuse.
+```{r,results='hold'}
+str_trim("    siin on palju tühjust    ")
+str_pad(sõnad, width = 9, side = "both", pad = "_")  
+```
+
+Kõige üldisem sõnede muutmise käsk on `str_replace(.)`, mis proovib argumendiga `pattern` ette antud ja leitud mustrit asendada argumendiga `replacement` määratud mustriga; asendatakse ainult esimene leidumine. Kõiki leidumisi saab asendada käsuga `str_replace_all(.)`
+```{r,results='hold'}
+str_replace(sõnad, "r", "l")
+str_replace_all(sõnad, "r", "l")
+```
+
+Kõigile `stringr` paketi käskudele võib argumentidega `pattern` ja `replacement` ette anda ka regulaaravaldisi^[http://en.wikipedia.org/wiki/Regular_expression].
+<!-- R-is on kasutusel selline määratlus, nagu on kirjeldatud käsu `regex(.)` abifailis `?regex`.
+```{r,results='hold'}
+str_replace("telefoninumber: +372 55-549-85", "[a-zA-Z: ]*(\\+[0-9]*)*( )*(.*)", "(\\1) \\3")
+```
+-->
+
+ 
+
+### Ülesanded
+1.  Massatchusettsi andmestikus on veerus `COW` ära toodud, kelle heaks inimene töötab. Kui tegemist on palgatöötajaga, sisaldab `COW` väärtus vastava inimese puhul sõna *Employee* või *employee*. Milline on palgatöötajate keskmine palk (`WAGP`)? Andmestik:\
+`link <- "https://github.com/Rkursus/2021/raw/master/data/"`\
+`mass <- read.table(str_c(link, "mass.txt"), sep = "\t", header = T)` 
+1. Eesti isikukoodi formaat^[http://et.wikipedia.org/wiki/Isikukood] on järgmine: abcdefghijk, kus a -- sugu ja sajand (paaritu arv mees, paarisarv naine, 1,2 -- 1800, 3,4 -- 1900, 5,6 -- 2000); bc -- aasta, de -- kuu, fg -- päev, hij -- (haigla) sel päeval (selles haiglas) sündimise järjekord, k -- kontrollnumber.   
+    1. Loe sisse komaga eraldatud isikukoodide jada:  
+    `isikukoodid <- read.table(str_c(link, "isikukoodid.txt"))[1,]`
+    1. Eralda isikukoodid üksteisest ja salvesta tekkiv vektor mingi nimega.
+    1. Tekita uus andmetabel (`data.frame`), millesse lisa isikukoodide veerg.
+    1. Lisa veerg, kus oleks kirjas, mis sugu iga inimene selles andmetabelis on.
+```{r, eval=FALSE, include=FALSE}
+# 1
+mass <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", sep = "\t", header = T)
+
+cbind(table(andmed$COW))
+
+andmed$emp <- str_detect(andmed$COW, pattern = "mployee")
+table(andmed$emp)
+
+andmed$emp <- str_detect(andmed$COW, pattern = "[Ee]mployee")
+table(andmed$emp, useNA = "i")
+
+by(andmed$WAGP,andmed$emp, mean, na.rm = T)
+
+ 
+
+#2
+# 1
+isikukoodid <- read.table("https://github.com/Rkursus/2021/raw/master/data/isikukoodid.txt")[1,]
+
+# 2. eralda
+ik <- unlist(str_split(isikukoodid, ",") )
+
+# 3. andmetabel, kus tunnus isikukood
+isikud <- data.frame(ID = ik)
+
+# 4. sugu, lisa andmestikku
+sugunr <- as.numeric(str_sub(ik, 1, 1))
+table(sugunr)
+sugu <- factor(sugunr %% 2, labels = c("naine", "mees"))
+isikud$sugu <- sugu
+
+```
+
+
+
+
+
+# Kuupäevadega töötamine
+R-is on kuupäevade jaoks `Date` andmetüüp. See on omapärane andmetüüp: näiliselt on tegemist tekstiga, ent sisuliselt arvuga -- kuupäevi saab liita-lahutada, arvutada keskmist. ISO standardile vastav kuupäev on kujul aasta-kuu-päev, sealjuures aasta on nelja numbriga, kuu ja päev kumbki kahe numbriga. Sageli on sisse loetavates andmestikes aga kuupäev teisiti vormindatud. Suvalises formaadis kuupäevalise sõna saab `Date`-tüüpi väärtuseks teisendada käsuga `as.Date(.)`, mille argumendiga `format` saab määrata, millises formaadis kuupäev ette antakse. Kui formaati ei ole käsus täpsustatud, siis proovib funktsioon esmalt formaadi `"%Y-%m-%d"`  ehk  *aasta-kuu-päev (2018-02-01)*, seejärel  `"%Y/%m/%d"` ehk *aasta/kuu/päev (2018/03/01)* sobivust, kui kumbki ei klapi antakse veateade.
+
+```{r}
+d1 <- as.Date("22.04.2009", "%d.%m.%Y")
+d2 <- as.Date("30.04.2009", "%d.%m.%Y")
+d2 - d1
+as.numeric(d2 - d1)
+```
+
+Näites kasutatud formaadi tähiste `%d`, mis tähendab päeva numbrit, `%m` mis näitab kuu numbrit, `%Y` mis tähistab neljakohalist aastanumbrit ja teiste formaadi võimaluste kohta saab  täpsemalt lugeda käsu `strptime(.)` abifailist `?strptime`. 
+
+Kuupäevaks formaaditud objektidega saab teha kõiki mõistlikke operatsioone, näiteks leida miinimum, keskmine, võrrelda hulki:  
+```{r}
+d3 <- Sys.Date()
+paevad <- c(d1, d2, d3)
+mean(paevad)
+d2 %in% paevad
+```
+
+Küll aga ei saa näiteks leida kuupäevast logaritmi või ruutjuurt.Põhjus on selles, et R talletab kuupäevi tegelikult päevade arvuna alates nullpunktist, sealjuures nullpunktiks loetakse vaikimisi 1970-01-01. Selles võime veenduda `as.numeric(.)` käsku kasutades.
+```{r}
+d1:d2
+as.numeric(as.Date("1970-01-02"))
+as.numeric(as.Date("1969-12-30"))
+```
+*Date*-tüüpi muutuja väärtuse saab sobival kujul sõneks teisendada käsuga `format(.)`, see võimaldab kombineerida teksti ja kuupäeva elemente:
+```{r}
+format(Sys.Date(), "Kuupäev: %d. %B, (aastal %Y). Nädal nr %V.")
+```
+
+### Ülesanded
+Vaatame edasi isikukoodide vektori (`isikukoodid` eelmisest ülesandest) põhjal tekitatud isikute info andmestikku.
+
+1. Lisa isikute andmestikku veerg, mis sisaldaks iga inimese sünnikuupäeva *Date*-tüüpi muutujana. 
+1. Lisa veerg, mis annab inimese vanuse täisaastates tänasel päeval (arvestades, et aastas on ~365,25 päeva).
+1. Leia kuupäev, mil said/saad  10 000 päeva vanuseks.
+1. Kuupäevadega töötamiseks saab kasutada ka lisapaketi **lubridate** funktsioone. Vaata infot lehelt [**lubridate**](https://lubridate.tidyverse.org/)
+```{r, eval=FALSE, include=FALSE}
+isikukoodid <- (read.table("https://github.com/Rkursus/2021/raw/master/data/isikukoodid.txt"))[1,]
+ik <- unlist(str_split(isikukoodid, ",") )
+isikud <- data.frame(ID = ik)
+sugunr <- as.numeric(str_sub(ik, 1, 1))
+isikud$sugu <- factor(sugunr %% 2, labels = c("naine", "mees"))
+
+
+#1
+sajand <- ifelse(str_sub(ik, 1, 1) < 5, 19, 20)
+osa <-  str_sub(ik, 2, 7)
+sajandiga <- str_c(sajand, osa)
+isikud$skp <- as.Date(sajandiga, format = "%Y%m%d")
+
+aasta <-ifelse(str_sub(ik, 1, 1) < 5, 1900,  2000) + as.numeric(str_sub(ik, 2, 3))
+kuu <- str_sub(ik, 4, 5)
+päev <- str_sub(ik, 6, 7)
+
+isikud$sünnipäev <-  as.Date(str_c(aasta, kuu, päev, sep = "-"))
+
+
+
+#2
+isikud$vanustäna <-  floor(as.numeric((Sys.Date() - isikud$skp)/365.25))
+head(isikud)
+difftime(Sys.Date() ,isikud$skp, units = "weeks")
+
+
+#3
+as.Date("1979-03-14") + 10000
+as.Date(10000, origin = "1979-03-14")
+
+Sys.Date() + 10000
+
+
+
+format(as.Date(10000, origin = "1979-03-14"), format = "%Y-%B-%d-%A")
+
+format(as.Date(10000, origin = "1979-03-14"), format = "%Y-%B-%d-%A %C sajand")
+
+format(as.Date(10000, origin = "1979-03-14"), format = "%Y-%B-%d-%A, %j päev tol aastal")
+```
+
+
+
+

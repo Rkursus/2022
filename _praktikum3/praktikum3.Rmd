@@ -1,0 +1,285 @@
+---
+title: | 
+  | Rakendustarkvara: R 
+  | 3. praktikum^[Praktikumijuhendid põhinevad aine MTMS.01.092 Rakendustarkvara: R (2 EAP) materjalidel, mille autorid on Mait Raag ning Raivo Kolde]
+  
+output: 
+  html_document:
+    theme: null
+    number_sections: true
+---
+
+ 
+<!-- 2017, 2018: ggplot2 näide välja võetus, sest see tuleb tagapool -->
+
+
+```{r,echo=FALSE, warning=FALSE}
+load("../data/andmed.RData")
+library(ggplot2)
+```
+
+
+# Toimingud andmestikuga
+
+Impordime uuesti andmestiku, mida korra kasutasime ka eelmises praktikumis (Massachusettsi andmestik), ja vaatame andmestikust ülevaadet
+```{r, results='hide'}
+andmed <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", 
+                     header = T, sep = "\t")
+str(andmed)
+```
+
+
+
+
+
+## Veergude ja ridade eraldamine andmestikust: indeksi ja nime järgi
+
+Kui tahame andmestikust ainult üht veergu uurida, siis kõige mugavam on kasutada dollari-sümbolit:
+```{r, eval=FALSE}
+vanused <- andmed$AGEP
+median(andmed$AGEP)
+median(vanused)
+```
+
+Üldiselt on `data.frame` kahemõõtmeline tabel, mis tähendab, et iga elemendi asukoht selles tabelis on ära määratud rea ja veeru numbriga. Rea- ja veerunumbrite abil andmestikust infot eraldades tuleb kasutada kantsulgusid:
+```{r,eval=FALSE}
+andmed[3, 2]  # kolmas rida, teine veerg
+andmed[ , 2]  # kogu teine veerg
+andmed[3,  ]  # kogu kolmas rida
+```
+
+Korraga on võimalik eraldada ka mitut rida või veergu, kasutades selleks käsku `c(.)`:
+```{r,eval=FALSE}
+andmed[, c(2, 4)]  # teine ja neljas veerg
+valik <- c(2, 4)  # tekitame objekti, milles on kirjas huvipakkuvate veergude numbrid
+andmed[, valik]  # kasutame seda objekti andmestikust veergude eraldamiseks
+andmed[c(5, 3,  9), ]  # viies, kolmas ja üheksas rida
+```
+
+Tihti on veeruindeksite asemel mugavam kasutada veergude nimesid (peavad olema jutumärkides):
+```{r,eval=FALSE}
+andmed[, c("AGEP", "WAGP")]  # eraldame veerud "AGEP" ja "WAGP"
+```
+
+Kui andmestikus on ka ridadel nimed, siis saab neid sama moodi kasutada ridade eraldamisel. Selle läbiproovimiseks lisame oma andmestikule praegu ise reanimed:
+```{r,eval=FALSE}
+rownames(andmed) <- paste("rida", rownames(andmed), sep = "-") # paneme ise nimed kujul 'rida-jrk'
+head(andmed[, 5:9])  # vaatame milline on tulemus
+andmed[c("rida-23", "rida-62"), 5:9]  # eraldame read 23 ja 62  
+```
+
+
+### Uue tunnuse lisamine
+Uue tunnuse lisamiseks andmestikku tuleb valida tunnuse nimi, mida andmestikus veel ei esine, ja omistada uuele andmeveerule valitud väärtused. Lisame oma andmestikku näiteks keskmise kuusissetuleku veeru, mis on arvutatud olemasoleva 12 kuu sissetuleku tunnuse `WAGP` abil. Uus tunnus lisatakse viimaseks veeruks andmestikus:
+```{r,eval=FALSE}
+andmed$kuusissetulek <- andmed$WAGP/12
+# või
+andmed[, "kuusissetulek"] <- andmed$WAGP/12
+str(andmed)
+```
+
+
+
+## Veergude ja ridade eraldamine andmestikust: tõeväärtusvektori abil
+Tõeväärtusvektoreid on väga mugav kasutada nn filtritena. Nimelt on `data.frame` puhul võimalik ridu (ja ka veerge!) eraldada mitte ainult indeksi või -nime järgi, vaid ka tõeväärtusvektori abil. Kui eraldada ridu, siis vastav tõeväärtusvektor peab olema sama pikk kui on andmestikus ridu ning  väärtused selles vektoris näitavad, kas vastavat rida kasutada (`TRUE`) või mitte (`FALSE`). Tõeväärtusvektorite kombineerimisel saab andmestikust väga spetsiifilisi alamhulki eraldada.
+```{r}
+# eraldame kõik read, kus SEX == "Male" ning salvestame selle uueks objektiks
+mehed <- andmed[andmed$SEX == "Male", ]  
+
+# moodustame kaks filtritunnust ja kombineerime need alagrupi valikuks
+filter_kod <- andmed$CIT == "Not a citizen of the U.S."  # mittekodanikud
+filter_vanus <- andmed$AGEP >= 80                        # vähemalt 80 aastased
+alamandmestik <- andmed[filter_kod & filter_vanus, ]   # Ära unusta: [read, veerud]
+```
+
+
+Üks näide ka tõeväärtusvektori abil veergude eraldamise kohta: valime kõik need veerud, mille päis algab sõnega *MAR* (tunnused, mis seotud abieluga)
+```{r,eval=FALSE}
+onMAR <- startsWith(names(andmed), "MAR")
+# või 
+#onMAR <- substr(names(andmed), 1, 3) == "MAR"
+abielu <- andmed[, onMAR]
+str(abielu)
+```
+
+
+### Ülesanded (Massachusettsi andmestik)
+1. Selekteeri andmestikust iga 5. rida ja salvesta see alamandmestik uue nimega `valik5`. Mitu vaatlust on selles andmestikus?
+
+1. Moodusta alamandmestik, kuhu kuuluvad uuritavad, kelle kohta pole teada, kas nad on viimase aasta jooksul elukohta vahetanud. Kes sellesse andmestikku kuuluvad?
+
+```{r, eval=FALSE, include=FALSE}
+valik5 <- andmed[seq(1, nrow(andmed), 5), ]
+str(valik5);dim(valik5)
+
+vastamata_kolimine <- andmed[is.na(andmed$MIG), ]
+str(vastamata_kolimine)
+
+```
+
+
+
+
+## Lihtsam kirjeldav statistika
+Allpool on loetletud mõned käsud, mille abil mõnd konkreetset tunnust (veergu andmestikust) kirjeldada.
+
+* `min(tunnus)`, `max(tunnus)`, `median(tunnus)`, `mean(tunnus)`, `sd(tunnus)` -- arvulise tunnuse karakteristikud
+* `quantile(tunnus, kvantiil)` -- saab leida kvantiile ehk protsentiile arvulisele tunnusele
+* `length(tunnus)` -- mitu elementi on antud veerus
+* `table(tunnus)` -- saab koostada sagedustabelit (kasulik `Factor`-tüüpi tunnuse kirjeldamisel)  
+   `table(tunnus1, tunnus2)` -- koostab kahemõõtmelise sagedustabeli
+* `t(tabel)` -- vahetab tabeli read ja veerud (transponeerib)
+* `ftable(tunnus1 + tunnus2 ~ tunnus3 + tunnus4, data = andmed)` -- teeb mitmemõõtmelise sagedustabeli, mis on inimesele lihtsasti loetav
+
+Kui on soov korraga mitme arvulise tunnuse keskmisi arvutada, sobib selleks käsk `colMeans(andmetabel)`, sarnane käsk on `rowMeans(.)`. Ridade või veergude summasid saab leida käskudega `rowSums(.)` ja `colSums(.)`. Seda saab näiteks kasutada sagedustabeli põhjal protsentide arvutamiseks:
+```{r}
+sagedustabel <- table(andmed$SEX, andmed$LANX)
+sagedustabel / rowSums(sagedustabel)  #proovi, mis juhtub, kui kasutada /colSums(.)
+```
+
+Sagedustabeli põhjal protsentide arvutamiseks (jaotustabeli arvutamiseks) on eelnevalt näidatud konstruktsioonist mugavam kasutada käsku `prop.table(.)`:
+```{r,results='hide'}
+prop.table(sagedustabel)  # ühisjaotus
+prop.table(sagedustabel, margin = 1)  # iga rida kokku 1 (ehk 100%)
+prop.table(sagedustabel, margin = 2)  # iga veerg kokku 1 (ehk 100%)
+```
+
+
+
+
+### Ülesanded (Massachusettsi andmestik)
+1. Mitu protsenti vastajatest on  mehed?
+1. Milline on palk, millest väiksemat palka saab 80% inimestest?
+1. Kas lahutatute osakaal on suurem meeste või naiste hulgas?
+1. Mitu üle 74 aasta vanust doktorikraadiga naist on  andmestikus?
+1. Mitmel inimesel on bakalaureuse-, magistri- või doktorikraad?
+1. Milline on keskmine aastapalk meestel, milline naistel?
+<!--1. Kui suur osa (protsentides) ilma kõrghariduseta inimestest saab suuremat aastapalka kui keskmine palk? -->
+1. Kas Massachusettsi andmete alamandmestikus `valik5`(tekitatud eelmises ülesanneteplokis) on meeste ja naiste keskmised aastapalgad samasugused kui kogu andmestikus?
+
+```{r, eval=FALSE, include=FALSE}
+#1 
+addmargins(table(andmed$SEX))
+prop.table(table(andmed$SEX))
+
+#2
+quantile(andmed$WAGP, p = 0.8, na.rm = T)
+
+#3
+table(andmed$SEX, andmed$MAR)
+addmargins(table(andmed$SEX, andmed$MAR == "Divorced"))
+
+prop.table(table(andmed$SEX, andmed$MAR == "Divorced"), 1)
+
+#4
+sum(andmed$SEX == "Female" & andmed$AGEP > 74 & andmed$SCHL == "Doctorate degree", na.rm = T)
+
+table(naine = andmed$SEX == "Female" , üle74 = andmed$AGEP > 74 , doktor = andmed$SCHL == "Doctorate degree")
+table(üle74 = andmed$AGEP > 74 , doktor = andmed$SCHL == "Doctorate degree", naine = andmed$SEX == "Female")
+
+
+#5
+table(andmed$SCHL %in% c("Doctorate degree", "Master's degree","Bachelor's degree"))
+
+
+#6
+by(andmed$WAGP, andmed$SEX, mean, na.rm = T)
+
+#7
+table(andmed$SCHL)
+ sum(is.na(andmed$SCHL))
+
+ 
+# ERi tulemused!!!!!
+ilma <- !(andmed$SCHL %in% c("Doctorate degree", "Master's degree","Bachelor's degree", "Professional degree beyond a bachelor's degree"))
+ilma <- !(andmed$SCHL == "Doctorate degree" | andmed$SCHL == "Master's degree"| andmed$SCHL =="Bachelor's degree" | andmed$SCHL == "Professional degree beyond a bachelor's degree")
+
+summary(ilma)
+
+keskmine <- mean(andmed$WAGP, na.rm = T)
+
+addmargins(table(ilma, ylekeskmise = andmed$WAGP > keskmine))
+prop.table(table(ilma, ylekeskmise = andmed$WAGP > keskmine), 1)
+
+ 
+
+addmargins(table(ilma, ylekeskmise = andmed$WAGP > keskmine, useNA = "a"))
+prop.table(table(ilma, ylekeskmise = andmed$WAGP > keskmine, useNA = "a"), 1)
+
+
+
+# 8
+by(andmed$WAGP, andmed$SEX, mean, na.rm = T)
+by(valik5$WAGP, valik5$SEX, mean, na.rm = T)
+
+
+```
+
+
+
+##  Faktortunnus
+
+<!--**Faktortunnus** pole tegelikult nn elementaartüüp (nagu näiteks `integer`), vaid keerulisem konstruktsioon. Nimelt faktortunnus on sildistatud koodide tunnus. Kui andmestik R-i sisse loetakse, siis vaikimisi pannakse tähelisi väärtuseid sisaldavate tunnuste tüübiks `factor` (seda võib ka `read.table(.)` argumendiga `stringsAsFactors` keelata) ning iga erinev väärtus kodeeritakse mingi täisarvuga, aga lisaks tehakse kodeerimistabel, kus on kirjas iga täisarvu (kodeeringu) tekstiline väärtus (ehk silt).-->
+**Faktortunnus** pole tegelikult nn elementaartüüp (nagu näiteks `integer`), vaid keerulisem konstruktsioon. Nimelt faktortunnus on sildistatud koodide tunnus. Kui andmestik R-i sisse loetakse, siis saame määrata, et tähelisi väärtuseid sisaldavate tunnuste tüübiks tekiks `factor` (selleks panna `read.table(.)` argumendi `stringsAsFactors` väärtuseks `TRUE`) ning iga erinev väärtus kodeeritakse mingi täisarvuga, aga lisaks tehakse kodeerimistabel, kus on kirjas iga täisarvu (kodeeringu) tekstiline väärtus (ehk silt).
+
+Et teada saada, mitu erinevat väärtust antud faktortunnusel võib üldse olla, kasutatakse käsku `levels(.)`. Sealjuures ei pruugi kõiki faktori väärtustasemeid antud andmetes üldse esineda:
+```{r}
+# loeme andmestiku uuesti sisse, tekitades faktor-tunnused
+andmed1 <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", 
+                     header = T, sep = "\t", stringsAsFactors = T)
+# tekitame uuesti alamandmestiku
+mehed1 <- andmed1[andmed1$SEX == "Male",]
+levels(mehed1$SEX)
+table(mehed1$SEX)
+```
+
+Faktortunnuse tekitamiseks saab kasutada käsku `factor(.)`. Vaikimisi pannakse faktortunnuse tekitamisel faktori tasemed tähestiku järjekorda. Seda saab aga muuta käsu `factor(.)` argumenti `levels` kasutades:
+```{r,results='hide'}
+table(andmed1$MARHT)   # Mitu korda abielus olnud?
+andmed1$MARHT <- factor(andmed1$MARHT, levels = c("One time", "Two times", "Three or more times"))
+table(andmed1$MARHT)
+```
+
+Kui andmete impordil määrata faktorite tekitamine (st määrata argument `stringsAsFactors = TRUE`) võib juhtuda, et mõni arvuline tunnus määratakse faktortunnuseks -- seda seepärast, et  sisseloetavas failis oli viga ja mõnes lahtris oli arvu asemel mingi tekst.
+<!--Mõnikord on imporditud andmestikus arvulised tunnused faktorkujul sellepärast, et sisseloetavas failis oli viga ning ühes lahtris oli arvu asemel mingi tekst. -->
+Kui nüüd proovida `as.numeric(.)` käsuga see tunnus  arvuliseks teisendada, tekib segadus: `Factor`-tüüpi tunnus on juba täisarvude tunnus (kuigi neil on sildid juures) ning seetõttu antakse tulemuseks need täisarvud ehk kodeeringud. Segadust ei teki, kui faktortunnus kõigepealt sõneks teisendada (kodeeringud kaotatakse, jäävad ainult sildid) ning alles seejärel teha teisendus arvudeks.
+```{r}
+(x <- factor(c("1", "8", "ei vastanud", "12"))) # välimised sulud tingivad väljatrüki
+as.numeric(x)
+as.numeric(as.character(x))
+```
+
+Mõnikord soovime arvulist tunnust muuta nn ordinaaltunnuseks (st selliseks, kus on mõned üksikud kategooriad, mis on omavahel järjestatud). Näiteks palkade statistika esitamisel on soov teada infot palgavahemike kaupa. Arvulist tunnust aitab lõikudeks tükeldada käsk `cut(.)`. Selle käsu tulemusel tekib faktortunnus, mille silte saab `cut(.)` käsu argumendiga `labels` ette anda:
+```{r}
+palgad <- cut(andmed$WAGP, breaks = c(0, 999, 4999, Inf), include.lowest = T,
+             labels = c("0-999", "1000-4999", ">= 5000"))
+table(palgad)
+```
+
+### Ülesanded
+1. Tekita tunnus, kus oleks kirjas, millisesse vanusgruppi inimene kuulub: 0--17, 18--49, 50--64, 65 või vanem.
+1. Kas USA kodakonsust mitteomavate naiste ja meeste hulgas on vanusgrupid erinevalt jaotunud?
+
+
+```{r, eval=FALSE, include=FALSE}
+andmed$vanusgrupp <- cut(andmed$AGEP, c(0, 17, 49, 64, Inf), 
+                         include.lowest = T, labels = c("0-17", "18-49", "50-64", "65 ja üle"))
+table(andmed$vanusgrupp)
+
+ 
+# 2. kas USA kodakondsuseta meeste ja naiste hulgas on vanus erinevalt jaotunud
+table(andmed$CIT)  # vaatame mis väärtused esinevad
+mittekodanikud <-andmed[andmed$CIT == "Not a citizen of the U.S.", ]
+prop.table(table(mittekodanikud$SEX, mittekodanikud$vanusgrupp), 1)
+
+ 
+
+```
+
+
+ 
+
+
+
+
+ 

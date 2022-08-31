@@ -1,0 +1,24 @@
+snippet setWorkingDirectory
+	# Setting up workspace, install 'rstudioapi' if using for first time
+	#install.packages('rstudioapi')
+	setwd(dirname(rstudioapi::getActiveDocumentContext()[[2]]))
+	
+snippet loadOrInstall
+	# A useful function ------------
+	# Function that test if a 'mypkg' package is installed
+	isInstalled <- function(mypkg) is.element(mypkg, installed.packages()[,1])
+
+	# Loads packages, if not installed, then installs
+	loadOrInstall <- function(package_names, repos="https://cloud.r-project.org/"){
+
+		for(package_name in package_names)  {
+			if(!isInstalled(package_name))    {
+			install.packages(package_name, repos=repos, dependencies = T)
+		}
+		
+		library(package_name, character.only=TRUE, quietly=TRUE, verbose=FALSE)
+		}
+	}
+
+	# Usage - Loading necessary packages
+	loadOrInstall(c('tidyverse', 'data.table', 'lubridate'))

@@ -1,0 +1,483 @@
+---
+title: | 
+  | Rakendustarkvara: R 
+  |  4. praktikum^[Praktikumijuhendid põhinevad aine MTMS.01.092 Rakendustarkvara: R (2 EAP) materjalidel, mille autorid on Mait Raag ning Raivo Kolde]
+  
+output: 
+  html_document:
+    theme: null
+    number_sections: true
+---
+
+<!-- eelmise aasta praksid 5   -->
+
+
+
+```{r,echo=FALSE, warning=FALSE}
+#load("andmed.RData")
+#library(ggplot2)
+```
+
+
+# Toimingud andmestikuga -- jätk
+
+
+
+
+<!-- # Veel toimingud andmestikuga-->
+
+## Andmestike täiendamine ja ühendamine
+Oleme tutvunud, kuidas andmestikust saab eraldada alamhulki (nt ridu või veerge, mis vastavad teatud kriteeriumitele). Ühekaupa saab uusi veerge  `data.frame`-tüüpi objektile lisada nii dollarimärgi kui kantsulgude abil, kui anname ette uue veeru nime.  
+
+Vaatame siin näiteandmestikuna andmestikku `mk` (*maakonnad.txt*), mis sisaldab infot USA 5 osariigi mõnede maakondade kohta (425 maakonda). Loeme andmed sisse 
+<!--ja lisame tunnuse, mis näitab, kas maakonna sündimuskordaja väärtus ületab 2.1 piiri:-->
+```{r,eval=FALSE}
+mk <- read.table("https://github.com/Rkursus/2021/raw/master/data/maakonnad.txt", sep = " ", header = TRUE)
+```
+```{r eval=FALSE, include=FALSE}
+# need read jätan praegu välja, sest see osa on samas praksis kus uue tunnuse lisamine, pole va vaja meenutust!
+mk[, "taastootev"] <- mk$births > 2.1   # või
+mk$taastootev <- mk$births > 2.1
+```
+
+Mitut uut veergu või rida saab andmestikule lisada `cbind(.)` ja `rbind(.)` käskudega. Neid kasutades tuleb aga olla ettevaatlik: lisatavas reas peab olema sama palju elemente kui on andmestikus veerge ja lisatavas veerus peab olema sama palju elemente, kui on andmestikus ridu. Tunnuste nimed lisatavates ridades peavad vastama andmestiku omale, samuti peab lisatavates veergudes objektide järjestus olema sama kui esialgses andmestikus. 
+<!--Probleeme võib tekkida ridade lisamisel, kui esineb `Factor`-tüüpi tunnuseid ja lisatavates andmetes on uusi faktoritasemeid, mida esialgses andmestikus pole välja toodud.  
+<!-- Probleem kui ntx enne faktor, lisatakse arvud??-->
+<!-- kui veergudel on päised ja veerud on liidetavates andmestikes eri järjekorras, siis rbind oskab ümber järjestada!, cbind ridu mitte  -->
+```{r,eval=FALSE}
+# teeme kaks uut tunnust
+suurus <- cut(mk$pop_estimate, c(0, 1000, 10000, 1000000, Inf), 
+              labels = c("mikro", "väike", "keskmine", "suur"), include.lowest = T)
+sooylekaal <- ifelse(mk$fem > 50, "F", "M")
+# lisame need vektorid andmestiku lõppu veergudeks:
+mk <- cbind(mk, suurus, sooylekaal)
+# või 
+lisatabel<- data.frame(suurus, sooylekaal)
+mk <- cbind(mk, lisatabel)
+
+# ridade lisamine, praegu tekitame sellega dubleeritud vaatlusi!
+lisa <- rep(seq(1, nrow(mk), by = 60),c(1:3, 1:3, 1, 1))
+mktopelt <- rbind(mk, mk[lisa, ])   # seda andmestikku kasutame järgnevalt ühes ülesandes
+```
+
+Sageli on analüüsiks vajaminevad andmed mitmes erinevas andmetabelis, mis võivad olla objektide arvu poolest ka erinevad. Näiteks jooksuvõistluste andmete puhul võivad ühes tabelis olla kirjas isikuandmed (nimi, sugu, vanus), teises tabelis aga võistlustulemuste andmed. Kui sooviks analüüsida tulemuste jaotust sugude vahel või sõltuvalt vanusest, oleks mugav need tabelid mestida käsuga `merge(.)`. Andmete ühendamiseks peaks mõlemas tabelis olema nn võtmetunnus, mille abil read vastavusse pannakse.
+```{r}
+isikud <- data.frame(nimi = c("Peeter", "Mari", "Tiina", "Laine"),
+      sugu = c("M", "N", "N", "N"), vanus = c(30, 22, 25, 20))
+tulemused <- data.frame(nimi = c("Mari", "Peeter", "Tiina", "Peeter", "Toomas"),
+      tulemus = c(30.1, 22.5, 18.4, 25.3, 20.4),
+      voistlus = c("jooks1", "jooks1", "jooks2", "jooks2", "jooks2"))
+```
+
+
+```{r}
+isikud 
+tulemused
+(kokku <- merge(isikud, tulemused, by = "nimi", all = TRUE))
+```
+
+
+### Ülesanded
+
+1. Kuidas peaks `merge` käsu kirja panema, kui `isikud` ja `tulemused` andmestikes on võtmetunnusel erinev nimi?
+1. Proovi, mis muutub `merge` käsu tulemuses, kui kasutada `all = TRUE` argumendi asemel  `all.x = TRUE` või `all.y = TRUE`.
+```{r, eval=FALSE, include=FALSE}
+merge(isikud, tulemused, by.x = "nimi",  by.y = "nimi",  all = TRUE)
+merge(isikud, tulemused, by = "nimi", all.x = TRUE)
+merge(isikud, tulemused, by = "nimi", all.y = TRUE)
+```
+
+
+## Sorteerimine
+Väga sageli soovime, et andmestiku read oleks mingi tunnuse (nt inimese vanuse) alusel sorteeritud. Sorteeri\-miseks on R-is kaks olulist käsku:
+
+- `order(.)` tagastab etteantud vektori elementide järjekorranumbrid sellises järjekorras, et saaksime järjestatud vektori, mh argumendiga `decreasing` saab määrata, kas see on kahanev või kasvav; 
+- `sort(.)` tagastab etteantud vektori elemendid kasvavas (või kahanevas) järjekorras.
+
+```{r}
+x <- c(8, 1, NA, 7, 7)
+order(x)
+sort(x, na.last = TRUE)
+x[order(x)]
+```
+
+```{r}
+#andmestiku ridade sorteerimine kahe vektori järgi:
+kokku[order(kokku$vanus, kokku$tulemus, decreasing = TRUE), ] 
+```
+
+
+
+### Ülesanded
+
+1. Loe sisse kaks andmestikku ja tutvu nendega (dimensioon, tunnused):\
+`link <- "https://github.com/Rkursus/2021/raw/master/data/"`\
+`visiidid <- read.table(paste0(link, "visiidid.txt"), sep = "\t", header = TRUE)`\
+`inimesed <- read.table(paste0(link, "isikud.txt"), sep = "\t", header = TRUE)`
+
+- Andmestikus `visiidid` on neli veergu: `ik` -- isikukood, `visiidi_kp` -- arsti külastamise kuupäev, `vererohk` -- süstoolne vererõhk antud arstivisiidil (mmHg), `crv` - C-reaktiivse valgu kontsentratsioon (nn näpuveri) (mg/L). Visiitide andmestik kirjeldab 10 aasta jooksul arsti külastamisel tehtud vererõhu ja CRV mõõtmisi.
+- Andmestikus `inimesed` on isikukoodid ja isikukoodist tuletatud info(sugu, sünnikuupäev, vanus).
+
+2. Järjesta visiitide andmestik kasvavalt isikukoodi ja arstivisiidi kuupäeva järgi. 
+<!-- kuupäevade kohta midagi mainida, teemat pole veel olnud, aga tekst sellisel kujul, et järejstus tuleb õige -->
+
+3. Ühenda isikukoodide ning visiitide andmestik, ühendatud andmestik peab sisaldama kõik inimesed mõlemast andmestikust. Mitu vaatlust on ühendatud andmestikus? Mis tunnuste osas esineb puuduvaid väärtusi.
+
+
+```{r, eval=FALSE, include=FALSE}
+#1 andmed sisse
+visiidid <- read.table("https://github.com/Rkursus/2021/raw/master/data/visiidid.txt", sep = "\t", header = TRUE)
+inimesed <- read.table("https://github.com/Rkursus/2021/raw/master/data/isikud.txt", sep = "\t", header = TRUE)
+
+str(visiidid)
+str(inimesed)
+
+#2 järjesta
+visiidid[order(visiidid$ik, visiidid$visiidi_kp),][1:20,]
+
+# 3 ühenda
+yhend <- merge(visiidid, inimesed, key = "ik", all = T) # kui ei pane "all = TRUE" siis need kes visiidil pole käinud lähevad kaotsi
+str(yhend)
+colSums(is.na(yhend))
+
+# need, kes on käinud: unikaalsed ik kui visiidikuupäev olemas
+length(unique(yhend$ik[!is.na(yhend$visiidi_kp)]))
+
+# leida need isikud, kel pole visiidikuupäeva
+sum(is.na(yhend$visiidi_kp))
+
+prop.table(table(yhend$Sugu, is.na(yhend$visiidi_kp)), 1)
+
+ 
+
+```
+
+
+<!--  ![""](joondiagramm.png) -->
+
+```{r,echo=FALSE,fig.width=7,fig.height=3,warning=FALSE, eval = F }
+library(ggplot2)
+visiidid <- read.table("http://kodu.ut.ee/~maitraag/rtr/visiidid.txt", sep = "\t", header = TRUE)
+inimesed <- read.table("http://kodu.ut.ee/~maitraag/rtr/isikud.txt", sep = "\t", header = TRUE)
+m <- merge(inimesed, visiidid, all.x = T, by = "ik")
+ggplot(data = m, aes(as.Date(visiidi_kp), vererohk, group = ik, colour = crv > 10)) + geom_point() + geom_line() + facet_wrap(~Sugu) + scale_x_date(name = "kuupäev")
+```
+
+
+```{r,eval=FALSE,echo=FALSE}
+# Kuidas arstivisiitide andmestiku tegin
+set.seed(12)
+vr_m = rnorm(nrow(inimesed), 100, 10)
+vr_s = abs(rnorm(nrow(inimesed), 0, 2))
+crv_m = rpois(nrow(inimesed), 5)+1
+#crv_s = rnorm(nrow(inimesed), 0, 3)
+visiidid <- data.frame(ik = NA, visiidi_kp = as.Date(NA), vererohk = NA, crv = NA)
+nullid = 0
+for(i in 1:nrow(inimesed)) {
+  visiite <- max(0, round(rnorm(1, sqrt(inimesed$vanus[i]/2), sqrt(inimesed$vanus[i]))))
+  if(visiite > 0) {
+    vkp <- as.Date(sample(Sys.Date():max(inimesed$skp[i], (Sys.Date() - 10*365)), visiite), origin = as.Date("1970-01-01"))
+    vererohk <- round(rnorm(visiite, vr_m[i], vr_s[i]))
+    if(is.na(sum(vererohk))) print(i)
+    crv <- rpois(visiite, crv_m[i])+2
+    visiidid <- rbind(visiidid, data.frame(ik = rep(inimesed$ik[i], visiite), visiidi_kp = vkp, vererohk = vererohk, crv = crv))
+  }
+}
+visiidid <- visiidid[-1, ]
+write.table(visiidid, "visiidid.txt", sep = "\t", row.names = F)
+```
+
+
+
+
+
+## Unikaalsed ja mitmekordsed elemendid. Hulgatehted.
+
+Mõnikord on üks objekt andmestikus mitu korda, ent me soovime seda ainult ühel korral analüüsi kaasata. Etteantud vektorist saab unikaalsed elemendid kätte käsuga `unique(.)`. Käsuga `duplicated(.)` saab teada, kas ette antud vektoris/andmetabelis on element esimest või juba mitmendat korda (tulemuseks on tõeväärtusvektor, kus `TRUE` tähendab seda, et antud väärtus on juba mitmendat korda).
+```{r}
+# vaatame andmestikku 'kokku', andmestike ühendamise alapunktist
+kokku$nimi
+unique(kokku$nimi)  # unikaalsed nimed
+duplicated(kokku$nimi)  # mitmes element nimede vektoris on dubleeriv
+duplicated(kokku)       # mitmes rida andmestikus on dubleeriv (sellist pole!)
+```
+
+R-is on realiseeritud ka elementaarsed hulgaoperaatorid: ühisosa, ühend ja vahe. Käsk `union(x, y)` tagastab ette antud kahe vektori `x` ja `y` elementidest koostatud uue vektori, sealjuures mõlema vektori kõik elemendid on esindatud. Käsk `intersect(x, y)` tagastab vektori elementidest, sealjuures on esindatud ainult need elemendid mis on nii vektoris `x` kui ka `y`. Käsk `setdiff(x, y)` tagastab vektori, kus on ainult need `x` elemendid, mida vektoris `y` ei ole. Kõik hulgatehete käsud tagastavad sellised vektorid, kus igat elementi on ainult üks kord
+```{r, echo=TRUE, eval = F}
+x <- c(1:5, 1:5)
+y <- 3:7
+union(x, y)
+intersect(x, y)
+setdiff(x, y)
+```
+
+### Ülesanded
+
+1. Kontrolli kas alapunktis **1.1** tekitatud andmestikus `mktopelt` on dubleeritud andmeid. Mitu objekti on korduvad? Kas mõni maakond on rohkem kui 2 korda korratud? Kui jah, siis millised?
+```{r, eval=FALSE, include=FALSE}
+# lahendus
+duplicated(mktopelt)
+sum(duplicated(mktopelt))
+
+duplicated(mktopelt[nrow(mktopelt):1, ]) #  ümberjärjestades saavad TRUE väärtuse teised objektid
+
+mktopelt[duplicated(mktopelt), 1:2]
+table(factor(mktopelt[duplicated(mktopelt), "County"]))
+```
+
+2. Vaata  visiitide ja isikukoodide ühendatud andmestikku. Kas arsti mitte külastanud isikute osakaal (protsentuaalselt) on suurem meeste või naiste hulgas?
+```{r, eval=FALSE, include=FALSE}
+link <- "https://github.com/Rkursus/2021/raw/master/data/"
+visiidid <- read.table(paste0(link, "visiidid.txt"), sep = "\t", header = TRUE)
+inimesed <- read.table(paste0(link, "isikud.txt"), sep = "\t", header = TRUE)
+
+yhend <- merge(visiidid, inimesed, by = "ik", all = TRUE)
+str(yhend)
+
+#mitu inimest 
+sum(!duplicated(yhend$ik))
+
+# mitu käinud arsti juures
+table(!is.na(yhend$visiidi_kp[!duplicated(yhend$ik)]))
+
+
+ 
+#soo võrdlus
+tabel <- table(yhend$Sugu[!duplicated(yhend$ik)],   "pole käinud arstil" = is.na(yhend$visiidi_kp[!duplicated(yhend$ik)]))
+addmargins(tabel)
+prop.table(tabel, 1)
+
+
+```
+
+
+
+
+
+
+# Andmestiku teisendused
+
+ 
+## Pikk ja lai andmetabel. Pakett reshape2 
+```{r, include=FALSE}
+library(reshape2)
+```
+Teise praktikumi materjali alguses näiteks toodud traditsioonilist andmetabeli kuju ehk  $objekt \times\  tunnus$-maatriksit nimetatakse vahel ka nn **laias formaadis andmestikuks**, tabeli iga  rida vastab ühele objektile, infoliiasus on viidud miinimumini. Näide laias formaadis andmestikust:
+```{r,echo=FALSE}
+(vr <- data.frame(nimi = c("Mari", "Jaan", "Jüri"), kaal = c(68, 65, 100), pikkus = c(170, 180, 190), sugu = c(2, 1, 1), pulss0m = c(70, 80, 80), 
+                  pulss10m = c(130, 120, 190), pulss30m = c(150, 120, NA)))
+```
+
+**Pikas formaadis andmestiku** puhul proovitakse hoida kõiki sama omadust kirjeldavaid andmeid ühes veerus; üks objekt võib kajastuda mitmel real. Sellisel kujul andmestikku on mõnikord mugav arvuti abil analüüsida (nt segamudelite hindamine, joonised `ggplot2` paketiga):  
+```{r,echo=FALSE}
+melt(vr, measure.vars = c("pulss0m", "pulss10m", "pulss30m"))
+```
+
+Eriti äärmuslik on pika formaadi puhul hoida kõiki arvulisi tunnuseid ühes veerus:
+```{r,echo=FALSE,warning=FALSE}
+melt(vr, id.vars = "nimi")
+```
+<!-- Kuigi R-i baaspaketis on kaasas käsk `reshape(.)`, siis on sellega üsna tüütu teisendada andmestikku ühest formaadist teise.  -->
+Andmestiku ühest formaadist teise viimiseks tutvume paketiga **reshape2**, milles olulisimad käsud `melt(.)` ja `dcast(.)` aitavad vastavalt teisendada andmestikku laiast formaadist pikka ja vastupidi, ning teha veel täiendavaid toiminguid/arvutusi.
+
+Funktsioon `melt(.)` teisendab andmed laiast formaadist pikka. Argumendiga `measure.vars` saab sellele ette anda veerunimede või -indeksite vektori, milles olevad tunnused pannakse kõik ühte veergu. Vaikimisi pannakse kõik arvulised väärtused ühte veergu nimega `value` ning teises veerus nimega `variable` on kirjas, mida antud väärtus tähendab (millises veerus see väärtus esialgses andmestikus oli).
+```{r,results='hold',warning=FALSE,fig.width=5,fig.height=2}
+#install.packages("reshape2") # kui arvutis pole paketti reshape2, siis esmalt installida
+library(reshape2) 
+vr <- data.frame(nimi = c("Mari", "Jaan", "Jyri"), 
+                 kaal = c(68, 65, 100), 
+                 pikkus = c(170, 180, 190), 
+                 sugu = c(2, 1, 1), 
+                 pulss0m = c(70, 80, 80), 
+                 pulss10m = c(130, 120, 190), pulss30m = c(150, 120, NA))
+(m <- melt(vr, measure.vars = 5:7)) # välimised sulud tingivad ekraanile trükkimise
+
+```
+```{r, eval=FALSE, include=FALSE}
+# välja jätta 2017
+library(ggplot2)
+ggplot(data = m, aes(variable, value)) + geom_line(aes(group = nimi)) + facet_wrap(~ nimi) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+Funktsioon `dcast(.)` aitab andmeid pikast formaadist laia teisendada, sealjuures tuleb argumendiga `formula` kindlasti ette öelda, millised tunnused määravad ära tulemusandmestiku read ning millised määravad ära veerud: `formula = reatunnus1 + reatunnus2 ~ veerutunnus1 + veerutunnus2`. Väga kasulik on argument `fun.aggregate`, mille abil saab määrata, kas ja millist funktsiooni peaks kasutama veerutunnustega antud väärtuste agregeerimiseks. Funktsiooniga `recast(.)` saab korraga ära teha töö, mille teeks ära järjestikku  rakendatud `melt(.)` ja   `dcast(.)` käsud.
+```{r,echo=FALSE}
+vana <- options()
+options(width=100)
+```
+```{r}
+dcast(m, formula = nimi ~ variable)
+dcast(m, nimi + kaal ~ variable + sugu)
+dcast(m, nimi ~ . , fun.aggregate = mean, na.rm = TRUE, value.var = "value")
+```
+```{r,eval=FALSE, echo = F}
+# (    dcast osa, melt osa         , dcast osa    )  -- tulemus sama, mis üleval
+recast(vr, nimi ~ . , measure.var = 5:7, fun.aggregate = mean, na.rm = T)
+```
+```{r,echo=FALSE}
+options <- vana
+```
+ 
+ 
+
+### Ülesanded
+
+1. Kasuta arstivisiitide ja isikute andmestiku ühte alamosa:\
+`link <- "https://github.com/Rkursus/2021/raw/master/data/"`\
+`valik <- read.table(paste0(link, "valik.txt"), sep = "\t", header = TRUE)`.
+Vaata andmestik üle `head(valik)`. Tegu on valikuga isikutest, tunnuste osas on lisatud visiidi järjekorranumber. 
+    - Vii andmed laiale kujule, kus iga isiku jaoks oleks andmestikus üks rida, kus on kirjas isikukood, sugu, sünnikuupäev, vanus ning vererõhu väärtus esimesel ja teisel visiidil.
+    - Vii andmed laiale kujule, kus iga isiku jaoks oleks andmestikus üks rida, kus on kirjas isikukood, sugu, sünnikuupäev, vanus,  crv väärtus esimesel ja teisel visiidil ning vererõhu väärtus esimesel ja teisel visiidil.
+
+
+1. Kasuta arstivisiitide  andmestikku.\
+`visiidid <- read.table(paste0(link, "visiidid.txt"), sep = "\t", header = TRUE)`\
+Leia iga isiku keskmine vererõhk ja CRV. 
+
+
+<!--1. Võta aluseks visiitide ja isikuandmete ühendatud andmestik, ning vii andmestik laiale kujule nii, et igas reas oleks ühe isiku isikukood, sugu, sünnikuupäev, vanus ning edasi crv väärtused vastavalt esimesel, teisel, kolmandal jne visiidil.-->
+
+
+
+```{r, eval=FALSE, include=FALSE}
+library(reshape2)
+
+valik <- read.table("http://kodu.ut.ee/~annes/R/valik.txt", sep = "\t", header = TRUE)
+head(valik)
+
+# 1a 
+(lai1 <- dcast(valik, ik + Sugu + skp +  vanus ~ jrk, value.var = "crv"))
+
+# 1b
+pikk <- melt(valik, measure.vars = c("crv", "vererohk"))
+head(pikk)
+(lai2 <- dcast(pikk, ik + Sugu + skp +  vanus ~ jrk + variable, value.var = "value"))
+(lai3 <- dcast(pikk, ik + Sugu + skp +  vanus ~  variable + jrk, value.var = "value"))
+
+
+#2
+visiidid <- read.table("https://github.com/Rkursus/2021/raw/master/data/visiidid.txt", sep = "\t", header = TRUE)
+head(visiidid)
+
+ 
+
+pikk <- melt(visiidid, measure.vars = c("crv", "vererohk"))
+lai1 <- dcast(pikk, ik + variable ~ "keskmine" , fun.aggregate = mean, na.rm = TRUE, value.var = "value")
+lai2 <- dcast(pikk, ik ~ variable , fun.aggregate = mean, na.rm = TRUE, value.var = "value")
+head(lai1)
+head(lai2)
+
+# käsku recast kasutades:
+recast(visiidid, ik ~ variable, measure.var=3:4, fun.aggregate=mean, na.rm=T)
+
+
+
+#3
+# lisada visiidijärkorranumbrid, !peab olema sorteeritud siin !  esimene argument ave() fun-le peab olema arvuline
+yhend <- merge(visiidid, inimesed, key = "ik", all = TRUE)
+#yhend <- yhend[1:30,]
+#yhend <- yhend[sample(1:30, size = 30), ]
+yhend <- yhend[order(yhend$ik, yhend$visiidi_kp), ]
+
+yhend$nr <- ave(yhend$ik, yhend$ik, FUN = seq_along)
+yhend$jrk1 <- paste("jrk", yhend$nr, sep = "")
+
+pikk <- melt(yhend, measure.vars = c("crv", "vererohk"))
+lai <- dcast(pikk, ik + Sugu + skp +  vanus ~  variable + jrk1 , value.var = "value")
+head(lai)
+
+
+
+#---
+library(plyr)
+yhend <- merge(visiidid, inimesed, key = "ik")
+yhend <- yhend[1:30,]
+yhend <- yhend[sample(1:30, size = 30), ]
+
+yhend <- yhend[order(yhend$ik, yhend$visiidi_kp), ]# ei  mõista siis kui on sorteerimata
+proov <- ddply(yhend, .(ik), mutate, nummerda = seq_along(visiidi_kp))
+proov
+proov[order(proov$ik, proov$visiidi_kp),]
+
+#---
+library(dplyr)
+yhend <- merge(visiidid, inimesed, key = "ik")
+yhend <- yhend[1:30,]
+yhend <- yhend[sample(1:30, size = 30), ]
+
+yhend <- yhend[order(yhend$ik, yhend$visiidi_kp), ]# ei  mõista siis kui on sorteerimata
+proov <- yhend %>% group_by(ik) %>% mutate(id = row_number())  
+data.frame(proov)
+proov[order(proov$ik, proov$visiidi_kp),]
+
+yhend %>% arrange(ik, visiidi_kp) %>% group_by(ik) %>% mutate(id = row_number()) # sorteerimine jadas sees
+
+ 
+
+
+library(ggplot2)
+ggplot(yhend, aes(x = as.Date(visiidi_kp), y = vererohk, group = ik)) + geom_line() + scale_x_date(name = "kuupäev")
+
+ 
+```
+
+
+
+
+
+# Veel andmestruktuure
+
+Oleme varem tutvunud sellega, mis tüüpi võivad olla üksikud andmeelemendid (`int`, `char`, `Factor` jm). Üksikuid elemente saab kokku panna üheks vektoriks näiteks käsuga `c(.)`, millega oleme samuti tuttavad. Samuti oleme tuttavad `data.frame`-tüüpi objektiga -- see on R-is andmetabeli tüüp. Andmeid on aga võimalik R-is hoida ka teistsugustes struktuurides kui vektor või `data.frame`.
+
+**Maatriks** on sisuliselt vektor, mille elemendid on paigutatud ridadesse ja veergudesse. Kuna tegemist on vektoriga, siis peavad kõik elemendid olema sama tüüpi. Maatriksit saab luua mitmel moel. Käsule `matrix(.)` tuleks ette anda vastav vektor ning see, mitmesse ritta ja veergu selle vektori elemendid paigutatakse. Olemasolevaid reavektoreid saab omavahel ühendada käsuga `rbind(.)`, veeruvektoreid käsuga `cbind(.)`. 
+```{r}
+(m <- matrix(1:12, nrow = 3, byrow = F))
+cbind(1:3, 5:7, 11:13)
+```
+Maatriksi elemente saab eraldada kantsulgudega:
+```{r}
+m[1:2, 2:3]
+```
+
+
+
+**List** on universaalne andmestruktuur. Sisuliselt on tegemist erinevatest elementidest koosneva loendiga, sealjuures need elemendid võivad olla täiesti erinevat tüüpi objektid (isegi funktsioonid). Kui listi elementidel on nimi, saab sobiliku elemendi kätte dollarimärgi ja nime abil, üldisemalt saab elementide eraldamiseks kasutada kahekordseid kantsulgusid. Listi saab tekitada käsuga `list(.)`. Uusi elemente saab lisada kantsulgudes indeksi abil või dollarimärgi abil.
+
+```{r}
+(minulist <- list(esimene = "üksainus sõne", matrix(1:12, 3), funktsioon = min))
+```
+```{r}
+# elementide valik listist
+minulist$esimene
+minulist[[2]]
+# elementide lisamine listi
+minulist$neljas <- c(5, 7) # lisame uue elemendi
+minulist[[5]] <- letters[1:10] # lisame veel ühe uue elemendi
+# muudetud listi struktuuri vaatamine
+str(minulist)
+```
+
+**Andmetabel** (`data.frame`) on tegelikult teatud piirangutega list: kõik elemendid peavad olema sama pikad vektorid (võivad olla erinevat tüüpi). Andmetabelit saab "käsitsi" tekitada käsuga `data.frame(.)`:
+```{r,eval=T}
+df <- data.frame(esimene = 1:5, 
+                 "2. veerg" = 11:15, 
+                 nimed = c("Peeter", "Mari", "Kaur", NA, "Tiiu"))
+```
+
+Kontrollimaks, kas tegemist on maatriksi, listi või andmetabeliga, saab kasutada käske `is.matrix(.)`, `is.list(.)`, `is.data.frame(.)`. Veelgi kasulikum on käsk `class(.)`, millega saab objekti tüübi nime teada.
+```{r}
+class(df)
+is.list(df)
+```
+ 
+### Ülesanded
+
+1. Tekita list: \
+`sõnad <- list(`\
+`   a = c("aabits", "aade", "aadel", "aader", "aadlik"),`\
+`   b = c("baar", "baas", "baat"), `\
+`   c = c("c-vitamiin", "ca", "circa", "cafe"))`\
+ 
+1. Eralda listist teine element, kasutades elemendi nime.
+1. Eralda listist teine element, kasutades elemendi indeksit.
+1. Eralda listist esimese elemendi kolmas element.

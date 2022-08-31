@@ -1,0 +1,836 @@
+---
+title: | 
+  
+  | Rakendustarkvara: R 
+  | 5. praktikum^[Praktikumijuhendid põhinevad aine MTMS.01.092 Rakendustarkvara: R (2 EAP) materjalidel, mille autorid on Mait Raag ning Raivo Kolde]
+output: 
+  html_document:
+    theme: null
+    number_sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+ 
+
+
+```{r,echo=FALSE,  warning=FALSE}
+load("../data/andmed.RData")
+
+```
+
+ 
+
+# Joonised paketiga ggplot2
+```{r, echo=FALSE, warning=FALSE}
+andmed <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", sep="\t", header=T)
+mk <- read.table("https://github.com/Rkursus/2021/raw/master/data/maakonnad.txt", sep = " ")
+library(ggplot2)
+```
+## Graafika R-is. ggplot2 ja graafikute grammatika
+
+R-i üks tugevaid külgi on tema jooniste tegemise võimekus. Toome siinkohal esmalt ära paar baaspaketi joonistamise käsku:
+```{r,fig.height=2.8,fig.width=5}
+# andmed = Massachusettsi osariigi valikuuringu andmed
+par(mfrow = c(1, 2), cex = 0.6)  # see rida võimaldab kaks joonist kõrvuti panna
+hist(andmed$AGE, xlab = "Vanus", ylab = "Isikuid", main = "")
+plot(andmed$WKHP, andmed$WAGP, xlab = "Töötunde", ylab = "Aastapalk",
+     col = (2:3)[factor(andmed$SEX)])
+legend("topleft", pch = 19, col = 2:3, legend = levels(factor(andmed$SEX)))
+```
+
+Kuigi R-i baasgraafika on peensusteni konfigureeritav ja sellega saab teha ülikeerulisi jooniseid, peab tüüpilisemate andmeid kirjeldavate jooniste saamiseks tegema palju lisatööd ja -arvutusi, nagu ülalolevastki näha. Näiteks `barplot(.)` käsk soovib argumendiks saada sagedustabelit, mis tuleks siis eelnevalt `table(.)` käsu abil arvutada.
+
+R-i kasutajate hulgas on viimastel aastatel muutunud populaarseks pakett `ggplot2`, mis võimaldab lihtsamini joonistada andmestikke kirjeldavaid jooniseid, sealjuures on tulemused visuaalselt üsna apetiitsed. Nimelt on `ggplot2` arendamisel pandud tähele statistiku Edward Tufte soovitusi värvide valikul ning eriti Leland Wilkinsoni struktureeritud käsitlust andmejoonistest, nn graafikute grammatikat (*grammar of graphics*).
+
+Üldised soovitused (Tufte):
+
+  * tindi/info suhe peab olema väike
+  * ei tohiks rõhutada mõnda elementi, kui see pole teistest olulisem (nt kõik värvid võiksid olla sama intensiivsusega)
+  * eelistada silmaga lihtsamini hinnatavaid kujundeid (nt tulba kõrgus tulpdiagrammil vs nurgakraad ringdiagrammil)
+  * eemaldada infot mitte kandvad komponendid (nt liba-3D)
+
+Graafikute grammatika (Wilkinson) on kontseptsioon, mille kohaselt graafiku ehitamisel ei tuleks lähtuda mitte graafiku tüübist, vaid andmetest. Iga joonis koosneb järgnevatest osadest:
+
+  * andmed (inimeste palk ja sugu)
+  * skaalad (kas esitada palk värviskaalal või x-teljel? kas palga esitamiseks sobib nt log-skaala?)
+  * statistikud (kas palga puhul kujutada keskmist või summat)
+  * geomeetrilised kujundid (kas keskmine peaks olema märgitud tulba kõrgusega või hoopis punktikesega)
+  * koordinaadid (äkki sobib polaarkoordinaadistik?)
+  * tahud (joonis jagatud erinevateks alamjoonisteks)
+  * üldkujundus (font jms)
+
+Paketis `ggplot2` on kaks graafikute tekitamise põhikäsku: `ggplot(.)` (keerukam) ja `qplot(.)` (*quick plot*, lihtsam). Käsk `qplot(.)` peaks käepärasem olema neile, kes on varem kasutanud R-i baasgraafika käske, kuid üldiselt on soovitav ära õppida siiski `ggplot(.)` kasutamine.
+<!--Meie kasutame praegu ainult `qplot` käsku.-->
+
+Paketi `ggplot2`  käskude jaoks on kõige põhjalikum dokumentatsioon internetis aadressil: http://ggplot2.tidyverse.org/reference/ .
+<!-- Kuna tegemist on endiselt väga noore paketiga, siis uuemate versioonide käskude süntaks või toimimine võib olla erinev vanemate versioonide omast (viimati oli oluline muutus `opts(.)` käsu asendamine `theme(.)` käsuga). Ka dokumentatsioon pole veel täielik (aga oluliselt parem, kui paar aastat tagasi). -->
+
+## ggplot2: hajuvusdiagramm; skaalad
+Paketi `ggplot2` põhimõte on joonise ülesehitamine kihthaaval: esmalt joonise põhi ja sellele lisatakse ehk liidetakse   (kasutades `+` märki)  kihtidena erinevad kujundused. Näiteks geomeetriliste elementide (punktid, jooned, tulbad jne) lisamiseks/muutmiseks on käsud `geom_<elemendi_nimi>`. 
+
+Alustame hajuvusdiagrammist. 
+Andmestikus `maakonnad` on info USA 5 osariigi mõnede maakondade kohta (425 maakonda). Uurime kõrgharidusega inimeste osakaalu ja keskmise sissetuleku vahelist seost. Mõistlik on seda kujutada hajuvus\-diagrammina, kus iga punkt on maakond ning ühel teljel on kõrgharidusega inimeste osakaalu märkiv tunnus `bachelor` ja teisel teljel keskmise sissetuleku tunnus `per_capita_inc`:
+```{r,eval=FALSE}
+mk <- read.table("https://github.com/Rkursus/2021/raw/master/data/maakonnad.txt", sep = " ", header = T)
+ggplot(data = mk, mapping = aes(x = bachelor, y = per_capita_inc)) + geom_point()
+#                                                    joonise põhi  + kujunduselement
+```
+```{r,echo=FALSE,}
+ggplot(data = mk, mapping = aes(x = bachelor, y = per_capita_inc)) + geom_point()
+```
+
+Tasub tähele panna käsku `aes(.)` (nagu *aesthetics*), mida ülaloleval joonisel   funktsiooni argumendile `mapping` ette anti. Nimelt `aes(.)` funktsioon aitab siduda graafilisi elemente andmestikus olevate tunnustega.
+
+Lisaks koordinaatidele saab üks punkt veel edasi anda infot näiteks värvi, kuju ja suurusega. Selleks seome funktsiooni `aes` abil kolm tunnust andmestikust vastavalt värvi `colour`, kuju `shape` ja suuruse `size` argumentidega:
+```{r, fig.width=5.3, fig.height=4.1}
+ggplot(data = mk, mapping = aes(x = bachelor, y = per_capita_inc)) + 
+  	geom_point(aes(colour = Poverty_factor, shape = State, size = pop_estimate))
+```
+
+Igat tüüpi tunnuseid ei saa suvaliste jooniseühikutega seostada, näiteks arvulise tunnusega ei saa siduda punkti kuju (nii palju erineva kujuga punkte pole lihtsalt olemas). Samas aga saab värviga kujutada nii faktortunnust (nt osariik) kui ka arvulist tunnust (nt kõrgus merepinnast). Täpsemini on hajuvusdiagrammi ühel punktil järgmised omadused, millega saab infot edasi anda:
+
+  - `x` -- (kohustuslik) asukoht x-teljel [num, chr, logical, Factor]
+  - `y` -- (kohustuslik) asukoht y-teljel [num, chr, logical, Factor]
+  - `alpha` -- läbipaistvus, väiksem väärtus tähendab suuremat läbipaistvust [num, chr, logical, Factor]
+  - `colour` -- värvus [num, chr, logical, Factor]
+  - `fill` -- sisemuse värvus (ainult mõne `shape` väärtuse korral) [num, chr, logical, Factor]
+  - `shape` -- punkti kuju (kuni 25 erinevat + ise määratavad sümbolid) [chr, logical, Factor]
+  - `size` -- punkti suurus [num]
+  - `stroke` -- kujundi piirjoone tugevus (ainult mõne `shape` väärtuse korral) [num]
+
+
+
+
+### Ülesanded
+
+1. Loe sisse maakondade andmestik:\
+`link <- "https://github.com/Rkursus/2021/raw/master/data/"`\
+`mk <- read.table(paste0(link, "maakonnad.txt"), sep = " ", header=T)`\
+1. Joonista hajuvusdiagramm keskkooli lõpetanute protsendi (`high_scl`) ja ülikooli lõpetanute protsendi (`bachelor`) vahel. Kas on näha mingit seost?
+1. Lisa joonisele osariigi (`State`) kohta käiv info; katseta erinevaid variante (värv, kuju jne)
+1. Kujuta joonisel mingil moel ka maakonna rahvaarvu (`pop_estimate`)
+```{r, eval=FALSE, include=FALSE}
+mk <- read.table("https://github.com/Rkursus/2021/raw/master/data/maakonnad.txt", sep = " ", header=T)
+
+ggplot(data = mk, aes(x = high_scl, y = bachelor)) + geom_point()
+ggplot(data = mk, aes(x = high_scl, y = bachelor, color = State)) + geom_point()
+ggplot(data = mk, aes(x = high_scl, y = bachelor, shape = State)) + geom_point()
+
+ggplot(data = mk, aes(x = high_scl, y = bachelor, color = State, size =pop_estimate )) + geom_point()
+ggplot(data = mk, aes(x = high_scl, y = bachelor, shape = State, size =pop_estimate )) + geom_point()
+
+```
+
+
+
+
+  
+
+
+## Tulpdiagramm; elementide asukoht
+
+Graafiku teljed võivad olla seotud ka diskreetse tunnusega (nt `Factor`), näiteks võiksime maakondi kujutades siduda x-teljega osariigi:
+```{r,eval=FALSE}
+ggplot(data = mk, aes(x = State)) + geom_bar()
+```
+
+Tekkis tulpdiagramm, kus iga tulp näitab maakondade arvu vastavas osariigis. Ent maakonnad ühe tulba sees võivad olla erinevad, näiteks vaesustaseme (`Poverty_factor`) poolest. Selleks võib iga tulba vastavate maakondade arvu järgi ära värvida. Kuna iga joonise element koosneb piirjoonest ning sisemisest osast, tuleb vastava osa värvi muutmiseks kasutada kas argumenti `colour` või `fill`:
+```{r,eval=FALSE}
+ggplot(data = mk, aes(x = State)) + geom_bar(aes(fill = Poverty_factor))
+```
+
+Kui on soov esitada maakondade kaupa vaesuse määra osakaalud (mitte absoluutarvud), siis peab kasutama lisaargumenti `position = "fill"`, ühtlasi on siis mõistlik muuta y-telje nimetus:
+```{r, eval=FALSE }
+ggplot(data = mk, aes(x = State)) + 
+  geom_bar(aes(fill = Poverty_factor), position = "fill") +
+  ylab("osakaal")
+```
+
+```{r, eval=FALSE, include=FALSE}
+# prooviks y-tleje nime muuta, ilma et kasutaks uut kihti ja ylab-fun
+#ggplot(data = mk, aes(x = State)) + geom_bar(aes(fill = Poverty_factor), position = "fill") + scale_y_continuous("protsent", labels = scales::percent)
+
+
+ggplot(data = mk, aes(x = State)) + 
+  geom_bar(aes(fill = Poverty_factor), position = "fill") 
+
+# NA?
+ggplot(data = mk, aes(x = State)) + 
+  geom_bar(aes(fill = Poverty_factor), position = "fill",  na.rm = TRUE) 
+
+ggplot(data = na.omit(mk[, c("State", "Poverty_factor")]), aes(x = State)) + 
+  geom_bar(aes(fill = Poverty_factor), position = "fill") 
+
+
+# NA saab diskreetsel juhul läbi skaala välja jätta!
+ggplot(mk, aes(Poverty_factor, fill =  Birth_factor)) + 
+  geom_bar() +
+  scale_x_discrete(na.translate = FALSE) +
+  scale_fill_discrete(na.translate = FALSE)
+
+
+ 
+
+#Compared to the previous version of ggplot2, there are three main changes:
+#    scale_x_discrete() and scale_y_discrete() always show discrete NA, regardless of their source
+#    If present, NAs are shown in discete legends.
+#All discrete scales gain a na.translate argument that allows you to control whether NAs are translated to something #that can be visualised, or should be left as missing. Note that if you don’t translate (i.e. na.translate = FALSE) the #missing values will passed on to the layer, which will warning that it’s dropping missing values. To suppress the #warnings, you’ll also need to add na.rm = TRUE to the layer call.
+#http://ggplot2.tidyverse.org/news/index.html 2017sept
+
+
+
+ggplot(data = mk, aes(x = State)) + 
+  geom_bar(aes(fill = Poverty_factor), position = "fill" ) 
+
+ ggplot(data = mk, aes(x = State)) + 
+  geom_bar(aes(fill = Poverty_factor), position = "fill" ) +
+   scale_fill_discrete(breaks = c("Low", "Medium", "High"))
+
+
+
+
+ggplot(data = mk, aes(x = State)) + 
+  geom_bar(aes(fill = Poverty_factor), position = position_fill()) 
+
+ggplot(data = mk, aes(x = State)) + 
+  geom_bar(aes(fill = Poverty_factor), position = position_fill(reverse = T)) 
+
+```
+
+
+Sageli esitatakse tulpdiagrammi tulbad horisontaalselt, selle saavutamiseks tuleb käsk kirja panna sama moodi kui enne, aga lisada tuleb joonise pööramine:
+```{r,eval=FALSE}
+ggplot(data = mk, aes(x = State)) + geom_bar() + coord_flip()
+```
+
+
+Praegu andsime tulpdiagrammi moodustamises ette tunnuse nö toorväärtused, vahel on aga tulpdiagramm vaja moodustada valmis sagedustabeli põhjal. Selleks, et tulpade kõrgus  määrata mingi tunnuse väärtuste põhjal tuleks `geom_bar` argumendiks lisada  `stat = "identity"`
+```{r, eval = F}
+(sagedustabel <- as.data.frame(table(mk$State)))
+ggplot(sagedustabel, aes(x = Var1, y = Freq)) + geom_bar(stat = "identity")
+```
+```{r, echo = F, eval = F, include = F}
+(sagedustabel <- as.data.frame(table(mk$State, mk$Poverty_factor)))
+ggplot(sagedustabel, aes(x = Var1, y = Freq, fill = Var2)) + geom_bar(stat = "identity", position = "fill")
+```
+Alternatiivne variant on aga kasutada funktsiooni `geom_col()`
+```{r, eval = F}
+ggplot(sagedustabel, aes(x = Var1, y = Freq)) + geom_col()
+```
+
+
+
+
+### Ülesanded
+1. Tee joonis iseloomustamaks sünnitamistaseme (`Birth_factor`) ja vaesuse taseme (`Poverty_factor`) vahelist seost. 
+1. Tee tulpdiagramm, mis kirjeldaks keskmist sissetulekut (`per_capita_inc`) erinevates osariikides. 
+<!--1. Tee joonis, mis kirjeldaks sissetulekut (`per_capita_inc`) erinevates osariikides, aga proovi sissetulek seostada x-teljega.-->
+
+
+```{r, eval=FALSE, include=FALSE}
+#1
+mk$Birth_factor <- factor(mk$Birth_factor, levels = c("Low", "Medium", "High"))
+mk$Poverty_factor <- factor(mk$Poverty_factor, levels = c("Low", "Medium", "High"))
+
+ggplot(data = mk, aes(x = Birth_factor, fill = Poverty_factor)) + geom_bar( position = "fill")+
+       ylab("osakaal")
+
+ggplot(data = mk, aes(fill = Birth_factor, x = Poverty_factor)) + geom_bar( position = "fill")+
+       ylab("osakaal")
+
+#2
+ggplot(mk, aes(x = State)) + 
+  geom_bar(aes(y = per_capita_inc), stat = "summary", fun.y = mean)
+
+ggplot(mk, aes(x = State, y = per_capita_inc)) + 
+  geom_bar(  stat = "summary", fun.y = mean)
+
+
+
+ggplot(mk, aes(x = State, y = per_capita_inc)) + geom_point()
+ggplot(mk, aes(x = State, y = per_capita_inc)) + geom_jitter(width = 0.2)
+
+
+ggplot(mk, aes(x = State, y = per_capita_inc)) + geom_bar(stat = "summary", fun.y = mean)
+ggplot(mk, aes(x = State, y = per_capita_inc)) + stat_summary(geom = "bar", fun.y = mean)
+  
+
+library(data.table)
+mk1 <- as.data.table(mk)
+mk1[,  .(kesk = mean(per_capita_inc)) , by = State]
+
+
+ggplot(mk, aes(x = per_capita_inc)) + geom_histogram()
+ggplot(mk, aes(x = per_capita_inc)) + geom_histogram(aes(fill = State), binwidth = 2500)
+
+ggplot(mk, aes(x = per_capita_inc)) + geom_density(aes(fill = State))
+ggplot(mk, aes(x = per_capita_inc)) + geom_density(aes(fill = State), alpha = 0.7)
+
+
+ggplot(data = mk, aes(x = per_capita_inc)) + geom_density()+facet_wrap(~State, 2,3)
+ggplot(data = mk, aes(x = per_capita_inc)) + geom_histogram()+facet_wrap(~State, 2,3)
+
+
+```
+
+
+
+
+## Veel graafikute tüüpe
+
+Tulpdiagrammiga sarnane graafik on histogramm, mis sobib arvulise tunnuse jaotuse iseloomustamiseks
+```{r}
+ggplot(mk, aes(x = per_capita_inc)) + geom_histogram()
+```
+```{r, eval=FALSE, include=FALSE}
+ggplot(mk, aes(x = per_capita_inc)) + geom_histogram(aes(y = ..density..))
+```
+
+
+Kui uurime tekstiliste väärtustega ja pideva arvutunnuse vahelist seost, siis sobib kasutada karpdiagrammi:
+
+```{r  }
+ggplot(data = mk, aes(x = State, y = per_capita_inc)) + geom_boxplot()
+```
+
+\pagebreak
+Tunnuse jaotuse võrdlemiseks gruppides sobib ka tihedusfunktsiooni hinnagu graafik   
+
+```{r  }
+ggplot(data = mk, aes(x = per_capita_inc, fill =  State)) + geom_density(alpha = 0.5)
+```
+
+
+
+Erinevaid elemente saab joonisel ka  korraga kujutada. Näiteks aegridade puhul esitada koos mõõtmispunktid ja neid ühendav joon
+ 
+```{r,fig.width=5}
+aeg <- 1:12
+tulem <- c(9, 4, 3, 5, 6, 8, 8, 15, 26, 29, 24, 23)
+andmed <- data.frame(aeg, tulem )
+ggplot(andmed, aes(x = aeg, y = tulem)) + geom_line( ) + geom_point()
+```
+
+Joondiagramm mitmes grupis:
+```{r,fig.width=6}
+tulem <- c(tulem, c(9:20))
+andmed2 <- data.frame(aeg = c(aeg, aeg), tulem, grupp = rep(c("platseebo", "ravim"), each = 12))
+ggplot(data = andmed2, aes(x = aeg,y = tulem, colour = grupp))  + 
+  geom_line() + geom_point() 
+```
+
+Mõnikord harvem muidugi võib olla soov esitada pideva ja kategoorilise tunnuse vahelise seose kirjeldamiseks mitte karpdiagramme, aga näiteks keskmisi koos usaldusvahemikega. Sellistest keerukamatest võimalustest tuleb hiljem juttu.
+
+
+Väike kokkuvõte joonise tüüpide valikust:
+
+Tunnus1      |   Tunnus2    | Sobivad joonised  | `geom_<?>`
+-------------|--------------|------------------ | --------------
+pidev/arvuline | -         | histogramm (tulbad) | `histogram`
+pidev/arvuline | -         | tihedus   | `density`
+kategooriline | -          | tulpdiagramm (tulbad) | `bar`
+kategooriline | kategooriline | tulpdiagramm (tulbad) | `bar`
+pidev/arvuline | pidev/arvuline | hajuvusdiagramm (punktid) | `point`
+pidev/arvuline | kategooriline | karpdiagramm (karbid) | `boxplot`
+pidev/arvuline | aeg vms järgnevus | joondiagramm (jooned) | `line`
+
+
+
+
+### Ülesanded
+1. Joonista tunnuse `bachelor` histogramm.
+1. Uuri tunnuse `high_scl` jaotust erinevates osariikides, kasutades karpdiagrammi.
+1. Kasuta arstivisiitide andmestikku\newline
+`visiidid <- read.table(paste0(link, "visiidid.txt"), sep = "\t", header = TRUE)`\newline
+Tee joondiagramm vererõhunäitudele (x-teljel aeg). Värvi jooned vastavalt inimese soole. 
+<!-- Soo tunnus leia isikukoodi abil  EI SAA, SEST STRINGR TAGAPOOL -->
+Soo tunnuse saamiseks liida visiitide andmestik isikuandmete tabeliga \
+`inimesed <- read.table(paste0(link, "isikud.txt"), sep = "\t", header = TRUE)`\newline
+
+```{r, eval=FALSE, include=FALSE}
+
+visiidid <- read.table("https://github.com/Rkursus/2021/raw/master/data/visiidid.txt", sep = "\t", header = TRUE)[1:5, ]
+str(visiidid)
+
+library(stringr)
+sugunr <- as.numeric(str_sub(visiidid$ik, 1, 1))
+visiidid$sugu <- ifelse(sugunr %% 2 == 0, "naine", "mees")
+visiidid$visiidi_kp <- as.Date(visiidid$visiidi_kp )
+
+ggplot(data = visiidid, 
+       aes(x = as.Date(visiidi_kp), y = vererohk, colour = sugu, group = ik)) +  
+  geom_line() +  
+  scale_x_date(name = "kuupäev", date_labels =  "%b-%Y")
+
+# saab ka ilma scale käsua aru, et tegu kuupäevadega
+ 
+
+
+
+inimesed <- read.table("https://github.com/Rkursus/2021/raw/master/data/isikud.txt", sep = "\t", header = TRUE)
+m <- merge(inimesed, visiidid, by = "ik")
+ggplot(data = m, 
+       aes(x = as.Date(visiidi_kp), y = vererohk, 
+           group = ik, colour = crv > 10)) + 
+  geom_point() + geom_line() + facet_wrap(~Sugu) + 
+  scale_x_date(name = "kuupäev")
+
+
+
+
+visiidid <- read.table("https://github.com/Rkursus/2021/raw/master/data/visiidid.txt", sep = "\t", header = TRUE)
+inimesed <- read.table("https://github.com/Rkursus/2021/raw/master/data/isikud.txt", sep = "\t", header = TRUE)
+m <- merge(inimesed, visiidid, by = "ik")
+ggplot(data = m, 
+       aes(x = as.Date(visiidi_kp), y = vererohk, 
+           group = ik, colour = crv > 10)) + 
+  geom_point() + geom_line() + facet_wrap(~Sugu) + 
+  scale_x_date(name = "kuupäev")
+
+
+as.Date(inimesed$skp) + inimesed$vanus*365.25
+
+m$vanus2 <- as.numeric(floor((as.Date(m$visiidi_kp) -  as.Date(m$skp))/365.25))
+
+m <- m[order(m$ik, m$visiidi_kp), ]
+
+head(m)
+
+m$nr <- ave(m$ik, m$ik, FUN = seq_along)
+m$max <- ave(m$nr, m$ik, FUN = max)
+
+
+viimane <- m[m$nr == m$max, ]
+
+sum(viimane$vanus != viimane$vanus2)
+sum(viimane$vanus == viimane$vanus2)
+viimane[viimane$vanus != viimane$vanus2, ]
+
+
+m$skp <- as.Date(m$skp)
+ggplot(data = m, 
+       aes(x = as.Date(visiidi_kp), y = vererohk, 
+           group = ik, 
+           colour = format(skp, "%B") %in%
+             c("september", "oktoober", "november") )) + 
+  geom_point() + 
+  geom_line() + 
+  facet_wrap(~Sugu) + 
+  scale_x_date(name = "kuupäev") + 
+  scale_color_discrete(name = "sünnipäev sügisel")
+
+
+```
+
+
+
+
+
+
+ 
+
+## Joonise jagamine tahkudeks
+
+Sageli on mõistlik ühe suure ja kirju pildi asemel joonistada palju väikeseid sarnase sisuga pilte. Selmet erinevate osariikide maakondade vaesus- ja haridustaseme seost ühel ja samal pildil kujutada, võiks seda iga osariigi jaoks teha eraldi. Joonise tahkudeks jagamiseks saab kasutada käsku `facet_wrap`. Sellele argumendile tuleb väärtus anda nn **valemi kujul**: `ridadeks_jagav_muutuja ~ veergudeks_jagav_muutuja`. Ühe  neist muutujatest võib ka ära jätta:
+```{r,fig.width=6, fig.height=3}
+ggplot(data = mk, aes(x = bachelor, y = perc_poverty)) + geom_point() + 
+      facet_wrap(facets = ~State)
+```
+
+Teine sarnane käsk on `facet_grid`: 
+```{r,fig.width=6, eval = F}
+ggplot(data = mk, aes(x = bachelor, y = perc_poverty)) + geom_point() + 
+      facet_grid(facets = females_percent > 50 ~ State)
+```
+
+
+### Ülesanded
+
+1. Joonista hajuvusdiagramm keskkooli ja ülikooli lõpetanute protsendi jaoks (tunnused `high_scl` ja `bachelor`) erinevate `Birth_factor` tasemete kaupa.
+<!--1. Järjesta `Birth_factor` väärtused mõistlikumas järjekorras ja tee see joonis uuesti.-->
+1. Lisa eelmisele joonisele ka jaotus osariikide kaupa. Kas erinevates osariikides on seosed on samad või erinevad?
+1. Kasuta arstivisiitide ja inimeste andmestikke
+<!--\newline
+`visiidid <- read.table("https://github.com/Rkursus/2021/raw/master/data/visiidid.txt", sep = "\t", header = TRUE)`\newline
+`inimesed <- read.table("https://github.com/Rkursus/2021/raw/master/data/isikud.txt", sep = "\t", header = TRUE)`\newline -->
+Tee nende andmete põhjal järgmine joonis:
+
+```{r, echo=FALSE, fig.width=6, fig.height=2}
+visiidid <- read.table("https://github.com/Rkursus/2021/raw/master/data/visiidid.txt", sep = "\t", header = TRUE)
+visiidid$visiidi_kp <- as.Date(visiidid$visiidi_kp )
+
+inimesed <- read.table("https://github.com/Rkursus/2021/raw/master/data/isikud.txt", sep = "\t", header = TRUE)
+inimesed$skp <- as.Date(inimesed$skp )
+
+m <- merge(inimesed, visiidid, by = "ik")
+m$Sugu <- factor(m$Sugu, labels = c("Mees", "Naine")  )
+
+ggplot(data = m, 
+       aes(x = visiidi_kp, y = vererohk, 
+           group = ik, 
+           colour = format(skp, "%B") %in%
+             c("september", "oktoober", "november") )) + 
+  geom_point() + 
+  geom_line() + 
+  facet_wrap(~Sugu) + 
+  scale_x_date(name = "kuupäev") + 
+  scale_color_discrete(name = "sünnipäev\n sügisel")
+
+```
+
+
+
+## *Veel joonisele kihtide lisamisest
+
+Paketiga `ggplot2` koostatud jooniseid saab salvestada objektina töölauale (st omistada joonis muutujale); valmisolevaid jooniseid saab seetõttu lihtsasti muuta ja täiendada. Praktikumi alguses vaatasime juba hajuvusdiagrammi punktidele värvi lisamist. Teeme selle korra veel läbi, kasutades ka võimalust joonis objektina salvestada
+```{r,results='hide',eval=FALSE}
+p <- ggplot(data = mk, aes(x = per_capita_inc, y = unemployment_rate)) + 
+            geom_point()# tekitatakse joonise objekt, ei kuvata
+p # kuvatakse joonis
+p + geom_point(mapping = aes(colour = State)) # lisame punktidele värvi
+
+```
+```{r,echo=FALSE,fig.height=3.5,fig.width=2.8}
+(p <- ggplot(data = mk, aes(x = per_capita_inc, y = unemployment_rate)) + geom_point())
+```
+```{r,echo=FALSE,fig.height=3.5,fig.width=4}
+p + geom_point(mapping = aes(colour = State)) # lisame punktidele värvi
+```
+
+Kindlasti ei tohi unustada käsku  `aes(.)` (*aesthetics*), mis aitab siduda graafilisi elemente andmestikus olevate tunnustega. Kui `aes(.)` funktsiooni ei kasutaks, otsitaks vastavate argumentide väärtuseid mitte andmestikust, vaid töökeskkonnast:
+```{r,error=TRUE}
+p + geom_point(colour = State) # objekti State otsitakse töökeskkonnast ja ei leita
+```
+
+Joonisele saab lisada ka uusi elemente, näiteks regressioonikõveraid või teksti. Uute elementide lisamisel võib ette anda ka uue andmestiku argumendiga `data`:
+```{r, fig.height=3.5}
+p + geom_smooth(method = lm) + # lisatakse siluja (praegu lineaarne regressioon)
+    geom_text(data = mk[c(34, 48, 65), ], mapping = aes(label = County), size = 3, 
+              colour = "red", hjust = 1, vjust = 0)
+```
+
+ 
+Kui joonisele on vaja lisada mingeid üksikuid detaile või märkusi, mis ei tulene enam otseselt kasutatud andmestikust, siis saab seda teha käsu `annotate(.)` abil:
+
+```{r, fig.height=3.5}
+p + 
+  annotate("rect", xmin = 2*10^4, xmax = 4*10^4, ymin = 15, ymax = 25, 
+           fill = "lightblue", alpha = 0.3, colour = "blue") +
+  annotate("segment", x = 3.5*10^4, xend = 3*10^4, y = 12, yend = 20, 
+           arrow = arrow(ends = "last", angle = 10)) +
+  annotate("text", x = 3.5*10^4, y = 12, label = "vaata\n siia", hjust = 0, vjust = 1)
+
+```
+```{r, eval=FALSE, include=FALSE}
+# pmst saaks selle ju teha ka geomidega, aga miskipärast tuleb see variant imelik
+# ristküliku ülemine serv läheb üle jooonisest, st seda ei ala piire ei kohandata kui aes-ist käbi ei käi?
+#
+p + geom_rect(xmin =   2*10^4, xmax = 4*10^4, ymin = 15, ymax = 25, 
+              fill = "lightblue", alpha = 0.3, colour = "blue") +
+  geom_segment(x = 3.5*10^4, xend = 3*10^4, y = 12, yend = 20, 
+               arrow = arrow(ends = "last", angle = 10)) +
+  geom_text(x = 3.5*10^4, y = 12, label = "vaata\n siia", hjust = 0, vjust = 1)
+```
+
+
+Eelnevalt oli mainitud, et tunnused, mida tahame joonisel graafiliste elementidega siduda tuleks esitada läbi `aes()` käsu. Juhul, kui tahame näiteks hajuvusdiagrammi punktide värvi määrata mitte tunnuse põhjal muutuvana vaid hoopis fikseerida, siis tuleks värvi  argument just `aes(.)` käsust välja jätta, sest vastasel juhul võib tulemus vahel ootamatu olla. Lisaks lisatakse joonisele legend, mis ühe värvi fikseerimise korral mõtet ei oma. Võrdle järgmist koodi ja  tulemusi:
+```{r,results='hide',eval=FALSE}
+p + geom_point(color = "blue")
+p + geom_point(aes(colour = "blue"))  
+```
+```{r,echo=FALSE,fig.height=3.5,fig.width=2.9}
+(p + geom_point(color = "blue"))
+```
+```{r,echo=FALSE,fig.height=3.5,fig.width=3.9}
+p + geom_point(aes(colour = "blue"))  
+```
+
+
+
+
+
+### *Ülesanded
+
+Ülesannetes kasuta USA viie osariigi maakondade andmestikku `mk`.
+<!--1. Loe sisse andmestik: `read.table("https://github.com/Rkursus/2021/raw/master/data/maakonnad.txt", sep = " ", header=T)`-->
+
+1. Joonista hajuvusdiagramm `high_scl` ja `bachelor` vahel.
+1. Lisa neile maakondadele nimed, kus keskkooliharidusega inimeste osakaal on < 50%.
+1. Lisa graafikule vertikaaljoon kohale, kus keskkooliharidusega inimeste osakaal oleks täpselt 50% (vihje: kasuta käsku `geom_vline(.)`)
+1. Lisa viimasele graafikule veel oma valitud kohta mingi tekstikommentaar.
+```{r, eval=FALSE, include=FALSE}
+mk <- read.table("https://github.com/Rkursus/2021/raw/master/data/maakonnad.txt", sep = " ", header=T)
+
+p <- ggplot(data = mk, aes(high_scl, bachelor)) + geom_point()
+p
+
+p + geom_text(data= mk[mk$high_scl < 50,], aes(label = County), col = "red", size = 3)
+
+p + geom_text(data= mk[mk$high_scl < 50,], aes(label = County), col = "red", size = 3) + 
+  geom_point(data= mk[mk$high_scl < 50,], aes(high_scl, bachelor),   col = "blue", size = 3)
+# kui size, col, aes()sisse panna, siis pannakse legendi need tähised
+
+p1 <- p + geom_text(data= mk[mk$high_scl < 50,], aes(label = County), col = "red", size = 3, 
+              vjust = 0, hjust = c(0, 0, 1, 0, 1, 0, 1, 1), angle = 45) + 
+  geom_point(data= mk[mk$high_scl < 50,],   col = "blue", size = 3)
+p1
+
+#kattuvaid ei näidata check_overlap = TRUE
+p + geom_text(data= mk[mk$high_scl < 50,], aes(label = County), col = "red", size = 3, vjust = 0, hjust = 0, angle = 45, check_overlap = TRUE) + 
+  geom_point(data= mk[mk$high_scl < 50,], aes(high_scl, bachelor),   col = "blue", size = 3)
+
+p1 + geom_vline(xintercept = 50, col = "green", size = 2, alpha = 0.5) 
+
+
+p2 <- p +  geom_vline(xintercept = 50, col = "green", size = 2, alpha = 0.5) +
+  geom_text(data= mk[mk$high_scl < 50,], aes(label = County), col = "red", size = 3, 
+              vjust = 0, hjust = c(0, 0, 1, 0, 1, 0, 1, 1), angle = 45) + 
+  geom_point(data= mk[mk$high_scl < 50,],   col = "blue", size = 3)
+p2
+
+
+
+
+p + geom_label(data= mk[mk$high_scl < 50,], aes(label = County), col = "green" )
+
+p + geom_label(data= mk[mk$high_scl < 50,], aes(label = County), col = "green", angle = 45 )
+
+
+p + geom_label(data= mk[mk$high_scl < 50,], aes(label = County), col = "green") + 
+  annotate("text", 60, 30, label = "tere kuu", angle = 120) + 
+  annotate("segment", x = 40, xend = 60, y = 20, yend=30 , arrow = arrow(ends="both"))
+
+p + geom_label(data= mk[mk$high_scl < 50,], aes(label = County), col = "green") + 
+  geom_text( x=60, y=30, label = "tere kuu", angle = 120) +
+  geom_segment(x = 40, xend = 60, y = 20, yend=30 , arrow = arrow(ends="both"))
+ 
+  annotate("segment", x = 40, xend = 60, y = 20, yend=30 , arrow = arrow(ends="both"))
+
+  
+  
+#----  usalduspiire proovida
+  
+  
+p <- ggplot(mk, aes(x = Poverty_factor, y = household_size  )) + 
+    geom_bar(stat = "summary", fun.y = "mean") 
+p
+  
+library(reshape2)
+m <- dcast(mk, State +  Poverty_factor~"keskv", fun.aggregate = mean, value.var = "per_capita_inc")
+s <- dcast(mk, State + Poverty_factor~"standardh", fun.aggregate = sd, value.var = "per_capita_inc")
+n <- dcast(mk, State + Poverty_factor~"N", fun.aggregate = length, value.var = "per_capita_inc")
+data <- merge(m, s,   by = c("State", "Poverty_factor"))
+data <- merge(data, n,   by = c("State", "Poverty_factor"))
+ 
+
+data$per_capita_inc <- 1000
+ggplot(mk, aes(x = Poverty_factor, y = per_capita_inc, color = State)) +  
+  geom_errorbar(data = data, aes(ymin = keskv - 1.96*standardh/sqrt(N), 
+                                 ymax = keskv + 1.96*standardh/sqrt(N) ), width= 0.2, position = "dodge" )
+
+ 
+
+ggplot(data, aes(x = Poverty_factor, color = State)) +  
+  geom_errorbar(data = data, aes(ymin = keskv - 1.96*standardh/sqrt(N), 
+                                 ymax = keskv + 1.96*standardh/sqrt(N) ), width= 0.2, position = "dodge" )
+
+ 
+
+ggplot(data, aes(x = Poverty_factor, y = keskv,  color = State)) +  geom_bar(stat = "identity", position = "dodge") + 
+  geom_errorbar(data = data, aes(ymin = keskv - 1.96*standardh/sqrt(N), 
+                                 ymax = keskv + 1.96*standardh/sqrt(N) ), width= 0.2, position = "dodge" )
+
+
+
+ots1 <- function(x, alpha = 0.05) mean(x) - qnorm(1 - alpha /2)*sd(x) )
+ots2 <- function(x, alpha = 0.05) mean(x) + qnorm(1 - alpha /2)*sd(x) )
+
+
+
+ggplot(mk, aes(x = Poverty_factor, y = per_capita_inc)) +  
+  geom_errorbar( aes(ymin = ots1(per_capita_inc), 
+                     ymax = ots2(per_capita_inc), 
+                     group = Poverty_factor), 
+                     width= 0.2, position = "dodge" )
+
+
+ 
+
+
+
+ggplot(mk, aes(x = Poverty_factor, y = per_capita_inc, colour = State)) + 
+  stat_summary_bin(geom = "errorbar", fun.ymin = ots1, fun.ymax = ots2, position = "dodge" )
+
+ 
+
+ots1 <- function(x, ...) t.test(x, ...)$conf[1]
+ots2 <- function(x, ...) t.test(x, ...)$conf[2]
+
+ggplot(na.omit(mk), aes(x = Poverty_factor, y = per_capita_inc, colour = State)) + 
+  stat_summary_bin(geom = "errorbar", fun.ymin = ots1, fun.ymax = ots2, position = "dodge" )
+
+
+ggplot(na.omit(mk), aes(x = Poverty_factor, y = per_capita_inc, colour = State)) + 
+  stat_summary_bin(geom = "errorbar",  fun.data = mean_se,  position = "dodge" )
+
+ggplot(na.omit(mk), aes(x = Poverty_factor, y = per_capita_inc, colour = State)) + 
+  stat_summary_bin(geom = "errorbar",  
+                   fun.data = mean_se, fun.args = list(mult = 1.96),  position = "dodge" )
+
+
+#ok
+ggplot(na.omit(mk), aes(x = Poverty_factor, y = per_capita_inc, colour = State)) + 
+  stat_summary_bin(geom = "errorbar",  
+                   fun.data = mean_se, fun.args = list(mult = 1.96),  position = "dodge" ) + 
+  scale_x_discrete(limits = c("High", "Medium", "Low"))
+
+
+
+ggplot(na.omit(mk), aes(x = Poverty_factor, y = per_capita_inc, colour = State)) + 
+  stat_summary_bin(geom = "errorbar",  
+                   fun.data = mean_se, fun.args = list(mult = 1.96),  position = "dodge" ) + 
+  scale_x_discrete(limits = c("High", "Medium", "Low")) + 
+  geom_line(aes(x = Poverty_factor, y = mean(per_capita_inc)))
+
+
+ggplot(na.omit(mk), aes(x = Poverty_factor, y = per_capita_inc )) + 
+  stat_summary_bin(geom = "errorbar",  
+                   fun.data = mean_se, 
+                   fun.args = list(mult = 1.96)) + 
+    stat_summary_bin(geom = "line",  fun.y = mean , aes(group = 1) ) +
+  scale_x_discrete(limits = c("High", "Medium", "Low"))
+
+
+ggplot(na.omit(mk), aes(x = Poverty_factor, y = per_capita_inc, color = State)) + 
+  stat_summary_bin(geom = "errorbar",  
+                   fun.data = mean_se, 
+                   fun.args = list(mult = 1.96)) + 
+    stat_summary_bin(geom = "line",  fun.y = mean , aes(group = State) ) +
+  scale_x_discrete(limits = c("High", "Medium", "Low"))
+
+
+```
+
+
+
+
+
+
+```{r, eval=FALSE, include=FALSE}
+pikk <- melt(iris, id.vars = "Species", measure.vars = 1:2)
+ggplot(pikk, aes(x = Species, y = value, color = variable)) + 
+  stat_summary_bin(geom = "errorbar", 
+                   fun.data = mean_se, fun.args = list(mult = 1.96)) 
+
+
+ggplot(pikk, aes(x = Species, y = value, color = variable)) + 
+  stat_summary_bin(geom = "errorbar", 
+                   fun.data = mean_se, fun.args = list(mult = 1.96)) +
+   stat_summary_bin(geom = "line",  fun.y = mean, aes(group = variable))
+
+
+ggplot(pikk, aes(x = Species, y = value, color = variable)) + 
+  stat_summary_bin(geom = "errorbar", 
+                   fun.data = mean_se, fun.args = list(mult = 1.96)) +
+   stat_summary_bin(geom = "line",  fun.y = mean, aes(group = variable)) +
+  ylim(2, 6.7)
+
+
+ggplot(pikk, aes(x = Species, y = value, color = variable)) + geom_point()+
+  stat_summary_bin(geom = "errorbar", 
+                   fun.data = mean_se, fun.args = list(mult = 1.96)) +
+   stat_summary_bin(geom = "line",  fun.y = mean, aes(group = variable)) +
+ 
+
+  
+  
+ggplot(pikk, aes(x = Species, y = value)) + geom_point(color = "gray") +
+  stat_summary_bin(geom = "errorbar", 
+                   aes(color = variable),
+                   fun.data = mean_se, fun.args = list(mult = 1.96)) +
+   stat_summary_bin(geom = "line",  fun.y = mean, 
+                    aes(color =  variable, group = variable)) 
+ 
+
+
+
+rotid <- nlme::BodyWeight
+
+
+ggplot(rotid, aes(Time, weight, color = Diet, group = Rat)) + geom_line()
+
+
+ggplot(rotid, aes(factor(Time), weight, color = Diet)) + 
+  stat_summary_bin(geom = "errorbar", fun.data = mean_se, fun.args = list(mult = 1.96))
+
+
+ggplot(rotid, aes(factor(Time), weight)) + 
+  stat_summary(geom = "errorbar", fun.data = mean_se, fun.args = list(mult = 1.96)) +
+  stat_summary(geom = "line", fun.y = mean, aes(group = 1))
+
+
+ggplot(rotid, aes(factor(Time), weight)) + 
+  stat_summary(geom = "errorbar", fun.data = mean_se, fun.args = list(mult = 1.96)) +
+  stat_summary(geom = "point", fun.y = mean)
+
+
+ggplot(rotid, aes(factor(Time), weight)) + 
+  stat_summary(geom = "errorbar", fun.data = mean_se, fun.args = list(mult = 1.96)) +
+  stat_summary(geom = "point", fun.y = mean) + ylim(200, 600)
+
+
+
+ggplot(rotid, aes(factor(Time), weight)) + geom_jitter(color = "gray", width = 0.1) + 
+  stat_summary(geom = "errorbar", fun.data = mean_se, fun.args = list(mult = 1.96)) +
+  stat_summary(geom = "point", fun.y = mean)
+
+
+ggplot(rotid, aes(factor(Time), weight)) + geom_jitter(color = "gray", width = 0.1) + 
+  stat_summary(geom = "errorbar", fun.data = mean_se, fun.args = list(mult = 1.96)) +
+  stat_summary(geom = "point", fun.y = mean) + ylim(200, 600)
+
+
+
+
+rotid <- nlme::BodyWeight[BodyWeight$Diet != 1, ]
+ggplot(rotid, aes(factor(Time), weight)) + geom_jitter(color = "gray", width = 0.1) + 
+  stat_summary(geom = "errorbar", fun.data = mean_se, fun.args = list(mult = 1.96)) +
+  stat_summary(geom = "point", fun.y = mean)
+
+
+p <-ggplot(rotid, aes(factor(Time), weight)) + geom_jitter(color = "gray", width = 0.1) + 
+  stat_summary(geom = "errorbar", fun.data = mean_se, fun.args = list(mult = 1.96)) +
+  stat_summary(geom = "point", fun.y = mean) + ylim(390, 600)
+
+p <- ggplot(rotid, aes(factor(Time), weight)) + geom_jitter(color = "gray", width = 0.1) + 
+  stat_summary_bin(geom = "errorbar", fun.data = mean_se, fun.args = list(mult = 1.96)) +
+  stat_summary_bin(geom = "point", fun.y = mean) + ylim(390, 600)
+
+
+library(plyr)
+d <- ddply(rotid, .(Time), summarize, kv = mean(weight),
+      ymin = mean(weight) - 1.96*sd(weight)/sqrt(8), 
+      ymax = mean(weight) + 1.96*sd(weight)/sqrt(8))
+
+
+p + annotate(geom = "point", x = factor(d$Time), y = d$ymax, color = "blue" )
+
+```
+
+
+
+
+
+## Joonise salvestamine
+
+ggplot2-ga tehtud jooniseid saab salvestada käsuga `ggsave(.)`. Kui anda käsule vaid faili nimi (koos laiendiga), siis salvestatakse viimati valmistatud joonis. Kui argumente `widht` ja `height` ei kasuta, siis joonise mõõtmed võetakse joonise akna järgi.
+
+<!---
+# ggplot2 puudused
+Kuna ggplot2 on suhteliselt uus pakett, siis on tal ka puuduseid. Olulisim puudus on vahest mittetäielik dokumentatsioon. Sageli häirib ka see, et identify() käsku ei saa kasutada andmestiku ridade identifitseerimiseks joonisel klikkides. Karpdiagrammi saab teha ainult vertikaalselt ning horisontaalseks tuleb see käsuga `coord_flip()` pöörata:
+```{r,eval=FALSE}
+ggplot(data = mk, aes(State, births)) + geom_boxplot() + coord_flip()
+```
+-->
+

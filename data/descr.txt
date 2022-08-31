@@ -1,0 +1,20 @@
+.id	V1
+1	AGEP	Age
+2	CIT	Citizenship status
+3	COW	Class of worker
+4	DDRS	Self-care difficulty
+5	INTP	Interest, dividends, and net rental income past 12 months (signed)
+6	LANX	Language other than English spoken at home
+7	MAR	Marital status
+8	MARHT	Number of times married
+9	MIG	Mobility status (lived here 1 year ago)
+10	MIL	Military service
+11	SCHL	Educational attainment
+12	SEX	Sex
+13	WAGP	Wages or salary income past 12 months
+14	WKHP	Usual hours worked per week past 12 months
+15	ESR	Employment status recode
+16	INDP	Industry recode
+17	OCCP	Occupation recode
+18	PINCP	Total person's income (signed)
+19	RAC1P	Recoded detailed race code

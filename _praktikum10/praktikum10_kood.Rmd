@@ -1,0 +1,51 @@
+---
+title: "X praktikum"
+output: pdf_document
+---
+# Esimene arvutus
+```{r,echo=FALSE}
+mass <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", sep ="\t", header = T)
+```
+
+Massachusettsi andmestikus on kokku `r nrow(mass)` inimest; sooline jaotus on järgnev:
+```{r,echo=FALSE}
+table(mass$SEX)
+```
+
+## Esimene alapunkt
+Nüüd on lisaks tulemusele endale näha, milline koodijupp leiab keskmise vanuse:
+```{r,echo=TRUE}
+mean(mass$AGEP)
+```
+
+
+# Sisu vormistamine
+
+Genereerime andmed (katseta, mis saab siis kui muuta `echo=FALSE`):
+```{r, echo=TRUE}
+library(dplyr)
+tabel0 <- mass %>% group_by("Kodakondsus" = CIT) %>%
+summarise("Keskmine vanus" = mean(AGEP), "Vanuse standardviga" = sd(AGEP)/sqrt(n()),
+"Soo ülekaal" = ifelse(sum(SEX == "Male") > n()/2, "Mehed", "Naised"))
+```
+
+
+ja nüüd tabeli:
+```{r koodijupp tabeli tegemiseks 1, results = 'asis'}
+library(knitr)
+kable(tabel0, digits = c(1, 2), align = c("lccr"), format = "markdown")
+```
+
+R tabelite esitamiseks paketga **xtable**.
+```{r koodijupp tabeli tegemiseks 2, results='asis'}
+library(xtable)
+tabel0 <- table(mass$CIT, mass$SEX)
+tabel <- xtable(tabel0, caption = "Sagedustabel", align = c("r|cc"))
+print(tabel, type = "latex", comment = FALSE) # type = "latex" tabel LaTeX koodis
+```
+
+Lineaarse mudeli koefitsentide esitus tabeli kujul:
+```{r mudeli kordajad, results = 'asis'}
+mudel <- lm(WAGP ~ WKHP, data = mass)
+print(xtable(mudel))
+```

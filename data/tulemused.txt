@@ -1,0 +1,6 @@
+nimi\tulemus
+kalle\1,2
+malle\2
+tiit\5,5
+teet\0,4
+peeter\3

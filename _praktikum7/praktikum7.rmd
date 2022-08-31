@@ -1,0 +1,360 @@
+---
+title: | 
+  
+  | Rakendustarkvara: R 
+  | 7. praktikum^[Praktikumijuhendid põhinevad aine MTMS.01.092 Rakendustarkvara: R (2 EAP) materjalidel, mille autorid on Mait Raag ning Raivo Kolde]
+output: 
+  html_document:
+    theme: null
+    number_sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r,echo=FALSE, warning=FALSE}
+load("../data/andmed.RData")
+library(ggplot2)
+library(reshape2)
+```
+
+
+
+# Andmetöötlus paketiga dplyr
+
+Pakett **dplyr** mõeldud andmetabelite täienduste, tabelis olevate objektide või tunnuste alamhulkade valiku, grupeerimise ja sorteerimise teostamiseks. Samuti saab selle abil leida erinevaid andmeid agregeerivaid tabeleid, mis sobivad kirjeldava statistilise analüüsi läbiviimiseks. Paketi **dplyr** käskude juures võib välja tuua veel nende töö kiiruse suuremate andmestike korral.  Põhjalik ülevaade selle paketi käskudest on paketi dokumentatsioonis^[https://cran.rstudio.com/web/packages/dplyr/vignettes/dplyr.html]. Põhifunktsioonid paketis on järgmised
+
+- `mutate()` -- lisab andmestikku uusi tunnuseid, mis on leitud olemasolevate põhjal.
+- `select()` -- valib andmestikust nime põhjal tunnused.
+- `filter()` -- valib andmestikust vaatlused/read loogilise tingimuse põhjal.
+- `summarise()` -- summaarsete näitajate leidmine.
+- `arrange()` --  andmestiku ridade sorteerimine.
+
+Kõigi funktsioonide esimene argument on andmetabel, järgmised argumendid täpsustavad, mida andmestikuga teha tuues ära tunnuste nimed, mille kirjapanekuks siin käskudes jutumärke pole vaja kasutada. Kõik funktsioonid väljastavad tulemuseks omakorda andmetabeli. Kõiki funktsioone saab kombineerida käsuga `group_by()`, mis määrab toimingute tegemise gruppide kaupa.
+
+
+<!-- Nagu näha, siis mitu funktsiooninime langeb kokku paketiga **plyr**. Seega pakette kasutades peaks neist korraga valima ühe. Või aktiveerida mõlemad paketid, siis kindlasti enne **plyr** pakett, seejärel **dplyr**. -->
+
+## Paketi dplyr  käskude kasutamine
+Loeme kõigepealt sisse näiteandmestiku: Massachusettsi valikuuring
+```{r, warning=FALSE, message=F}
+mass <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", sep = "\t", header = T)
+```
+Paketi installimine ja aktiveerimine:
+```{r, warning=FALSE, message=F}
+#install.packages(dplyr)          # vajadusel installeerida pakett
+library(dplyr)  
+```
+
+Käsu `mutate()` abil saab andmestiku veergudega teisendusi teha, uusi tunnuseid tekitada või ka mingeid tunnuseid kustutada
+```{r, warning=FALSE, message=F}
+# arvutame kaks uut tunnust, kustutame ühe vana
+mass1 <- mutate(mass, 
+                kuus = WAGP/12, 
+                kuus_euro = kuus * 0.8, 
+                MIG = NULL)
+```
+
+Käsk `filter(.)` aitab valida välja teatud kriteeriumitele vastavaid ridu. See on kiirem kui kantsulgude kasutamine, sest kantsulgusid kasutades vaadatakse üksikud elemendid ükshaaval üle, ent `filter(.)` käsu puhul kasutatakse nutikamaid algoritme (enamasti andmed sorditakse mingil moel enne kui hakatakse üldse filtris määratud kriteeriumeid kontrollima).
+```{r, warning=FALSE, message=F}
+# rakendame filtrit (ekraanile paari esimese veeru väärtused neil vaatlustel)
+filter(mass, AGEP > 70, WAGP > 100000)[,1:3]
+```
+
+Käsu `select(.)` abil saab välja valida tingimustele vastavaid veerge andmestikust. Järgmises näites on rakendatud esmalt ridade filtreerimist, seejärel tehtud valik veergude hulgast: valitakse need veerud, mille nimes sisaldub täht "G"
+```{r, warning=FALSE, message=F}
+# rakendame filtrit ja selekteerime tunnuseid
+select(filter(mass, AGEP > 70, WAGP > 100000), contains("G"))
+```
+
+Käsk `group_by(.)` aitab andmestiku tükkideks jagada, aga ei tee sellega midagi enamat. Kui tükkidel soovida midagi analüüsida, tuleb `group_by(.)` funktsiooni tulemus ette anda vastavaks analüüsiks kasutatavale funktsioonile. Siin kohal on  hea kasutada funktsiooni `summarise(.)`, mis esitab agregeeritud tulemused:
+
+```{r}
+summarise(group_by(mass, CIT), 
+          keskpalk = mean(WAGP, na.rm = T),
+          n = n(),
+          notNA = sum(!is.na(WAGP)))
+```
+
+Käsu `arrange(.)` abil saab andmestikke sorteerida
+```{r}
+osa <- filter(select(mass, id, SEX, AGEP, WKHP, WAGP), WAGP > 300000, AGEP < 55)
+arrange(osa, SEX, desc(AGEP), WKHP)
+```
+```{r eval=FALSE, include=FALSE}
+#  sorteerimine grupeeringu korral (grupitunnuse võiks panan ju lihtsalt esimeseks sorteerimistunnuseks)
+arrange(group_by(osa, SEX),  AGEP, WKHP, .by_group = TRUE)
+arrange(group_by(osa, SEX),  AGEP, WKHP, .by_group = FALSE)
+```
+
+
+
+Lisaks on paketis **dplyr** defineeritud **toru** ehk aheldamisoperaator (kujul `%>%`), millega on võimalik ühe funktsiooni tulemused edasi anda järgmisele funktsioonile, ilma, et vahetulemust ekraanile prinditaks või uuele muutujale omistataks. Ehk koodi, kus on vaja rakenda kahte funktsiooni `fun1` ja `fun2` järgmiselt `fun2(fun1(x), y)` võib kirja panna kujul `fun1(x) %>% fun2(y)`. Esimese funktsiooni tulemus antakse siin teisele funktsioonile ette **esimeseks** argumendiks.
+
+<!--Aheldamisoperaatori kuju on `%>%`. (Kes soovib muul kujul ahledamisoperaatorit, võib selle ise defineerida; Mõningatel juhtudel leidub aheldamisoperaator ka kujul `%.%`.)-->
+  Toru kasutamine aitab mõnikord muuda koodi loetavamaks. Näiteks, kui on vaja leida andmestikust `mass`  soo ja perekonnaseisu gruppides keskmist palka ning grupi mahtu ja saadud tulemustabelist  näha  esimesi ridu, siis aheldamisoperaatori abil saaks selle kirja panna järgmiselt:
+```{r, echo = F}
+options(tibble.width = Inf)
+```
+```{r}
+mass %>% 
+  group_by(SEX, MAR) %>% 
+  summarise(keskpalk = mean(WAGP, na.rm = T), n = n()) %>% 
+  head()  
+```
+Kui paneksime sama asja kirja "tavaliselt", siis peaksime koodirida alustama nö  tagantpoolt ettepoole ehk alustama viimasest operatsioonist, mida andmetele rakendada (`head`)
+```{r, eval = F}
+head(summarise(group_by(mass, SEX, MAR), keskpalk = mean(WAGP, na.rm = T), n = n()))
+```
+
+ 
+
+### Ülesanded
+
+1. Leia inimeste vanuses 16 aastat kuni 85 (kaasaarvatud) aastat, keskmine ja maksimaalne nädala töötundide arv (WKHP), soo ja vanusgruppide (5-aastased vanusgrupid) kaupa. Esita tabelis ka gruppide mahud ja vaatluste arv, mida on keskväärtuse/maksimumi leidmisel kasutatud.  Leia küsitud tabel kahte moodi, nii "toru" kasutades kui ilma.
+1. Tee eelmise ülesande andmete põhjal joondiagramm.
+```{r, eval=FALSE, include=FALSE}
+# n()
+#This function is implemented specifically for each data source and can only be used from within summarise(), mutate() and filter().
+mass <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", sep = "\t", header=T)
+mass$vanusgr <- cut(mass$AGEP, seq(0, 100, 5), include.lowest = T)
+
+summarise(group_by(filter(mass, AGEP > 15, AGEP < 86),  vanusgr, SEX), 
+            "grupi maht" = n(), 
+            n.tunnid = sum(!is.na(WKHP)), 
+            tunde.kesk = round(mean(WKHP, na.rm =T), 1), 
+            #tunde.min = min(WKHP, na.rm = T),
+            tunde.max = max(WKHP, na.rm = T))
+
+
+ 
+
+
+tabel <-
+  mass %>% filter(between(AGEP,  16, 85)) %>% 
+  group_by(vanusgr, SEX) %>% 
+  summarise("grupi maht" = n(), 
+            n.tunnid = sum(!is.na(WKHP)), 
+            tunde.kesk = round(mean(WKHP, na.rm =T), 1), 
+            #tunde.min= min(WKHP, na.rm = T),
+            tunde.max = max(WKHP, na.rm = T)) 
+
+ 
+
+ggplot(tabel, aes(vanusgr, tunde.kesk, group = 1)) + 
+  geom_line()+ geom_point() + 
+  geom_line(aes(y = tunde.max), col = "red") +
+  geom_point(aes(y = tunde.max), col = "red") +
+  facet_wrap(~SEX)
+
+
+
+ggplot(tabel, aes(vanusgr, tunde.kesk, group = 1)) + 
+  geom_line()+ geom_point() + 
+  geom_line(aes(y = tunde.max), col = "red") +
+  geom_point(aes(y = tunde.max), col = "red") +
+  facet_wrap(~SEX, labeller = as_labeller(x = c("Female" = "Naine", "Male"  = "Mees")))
+
+
+# ühe ropsuga
+mass %>% filter(between(AGEP,  16, 85)) %>% 
+  group_by(vanusgr, SEX) %>% 
+  summarise(`grupi maht` = n(), 
+            n.tunnid = sum(!is.na(WKHP)), 
+            tunde.kesk = round(mean(WKHP, na.rm =T), 1), 
+            tunde.min= min(WKHP, na.rm = T),
+            tunde.max = max(WKHP, na.rm = T)) %>%
+  ggplot( aes(vanusgr, tunde.kesk, group = 1)) + 
+  geom_line()+ geom_point() + 
+  geom_line(aes(y = tunde.max), col = "red") +
+  geom_point(aes(y = tunde.max), col = "red") +
+  facet_wrap(~SEX) + 
+  theme(axis.text.x = element_text(angle = 90))
+
+
+# andmestik pikaks teha
+mass %>% filter(between(AGEP,  16, 85)) %>% 
+  group_by(vanusgr, SEX) %>% 
+  summarise(`grupi maht` = n(), 
+            n.tunnid = sum(!is.na(WKHP)), 
+            tunde.kesk = round(mean(WKHP, na.rm =T), 1), 
+            #tunde.min= min(WKHP, na.rm = T),
+            tunde.max = max(WKHP, na.rm = T)) %>% 
+  melt(measure.vars = c("tunde.max", "tunde.kesk")) %>% 
+  ggplot(aes(x = vanusgr, y = value, color = variable, group = variable)) + 
+  geom_line() + 
+  facet_wrap(~SEX) + 
+  theme(axis.text.x = element_text(angle = 90))
+
+
+
+
+
+# andmestik pikaks teha  ja ühel joonisel, tahkudeta
+mass %>% filter(between(AGEP,  16, 85)) %>% 
+  group_by(vanusgr, SEX) %>% 
+  summarise(`grupi maht` = n(), 
+            n.tunnid = sum(!is.na(WKHP)), 
+            tunde.kesk = round(mean(WKHP, na.rm =T), 1), 
+            #tunde.min= min(WKHP, na.rm = T),
+            tunde.max = max(WKHP, na.rm = T)) %>% 
+  melt(measure.vars = c("tunde.max", "tunde.kesk")) %>% 
+  ggplot(aes(x = vanusgr, y = value, linetype = variable, color = SEX,  group = interaction(variable, SEX))) +   geom_line() + 
+  theme(axis.text.x = element_text(angle = 90)) + 
+  scale_color_discrete(name = "Sugu", labels = c("Naine", "Mees")) + 
+  scale_linetype_discrete(name = "Töötunnid", labels = c("Maksimum", "Keskmine")) + 
+  labs(x = "Vanusgrupp", y = "nädala töötunnid")
+
+
+
+
+
+
+```
+1. Aheldamisoperaatorit kasutades ühenda eelmised kaks ülesannet.
+
+
+
+# Pakett data.table
+
+Suurte andmete filtreerimiseks, teisendamiseks, agregeerimiseks ja grupeerimiseks sobib ka pakett **data.table**^[https://cran.r-project.org/web/packages/data.table/vignettes/datatable-intro.html].
+
+Paketi andmetabel ehk *data.table* on tavalise andmetabeli *data.frame*-i edasiarendus. Nagu tavalise andmetabeli korral on *data.table* tabelist võimalik objekte ja veerge valida kantsulgudes indekseid määrates. Lisavõimalus on see, et *data.table* tabelis saab sel moel uusi tunnuseid arvutada, tunnuseid jooksvalt uuendada ning andmeid grupitunnuse põhjal agregeerida.
+
+Kui `DT` on *data.table* tüüpi andmetabel, siis põhisüntaksi kuju saab kirja panna järgnevalt
+```{r, eval = F}
+DT[i, j, by]
+```
+kus 
+
+- `i` määrab read/objektid, mida edasi kasutada
+- `j` määrab veerud, mis valitakse, uuendatakse või tekitatakse
+- `by` määrab vajadusel grupitunnuse `j` tehtavateks arvutustesse.
+
+
+## Näited data.table süntaksi kasutamisest
+Siinkohal mõned näiteid andmestikust objektide või veergude valimisest ja arvutuste kirjapanekust. Proovi need läbi ja uuri tulemust. 
+Erinevalt tavalisest andmestikust ei ole *data.table* tabelites reanimesid, on ainult reanumbrid, seega rida nime järgi valida saa. Teiseks võib välja tuua, et tekstitunnused on neis tabelites vaikimisi *character* tüüpi, mitte *factor* tüüpi.
+```{r, message=F}
+#install.packages("data.table")    # vajadusel installeerida
+library(data.table)  
+
+# data.table tüüpi objekti moodustamine
+DT <- data.table(a = 1:10, 
+                 b = rep(1:3, c(3, 3, 4)), 
+                 c = rep(LETTERS[5:7], c(4, 3, 3)))
+```
+
+```{r, message=F}
+DT
+str(DT)
+```
+Ridade ja veergude valik (alamosa andmetabelist)
+```{r, eval = F}
+DT[1:2, ]
+DT[b > 1.5, ]
+DT[, 3]
+DT[, a]
+DT[,"a"]
+DT[b > 1.5, 3]
+DT[c(1, 3:4), .(a, b)]
+DT[.N,]
+```
+Uue tabeli moodustamine, arvkarakteristikud, loendamine, uued tunnused:
+```{r, eval = F}
+DT[, .(kv = mean(a), s = sd(a), mitu = .N), by = c]
+DT[a > 3, .N]
+DT[, .N, by = c]
+DT[, .(d = a + 50)]
+```
+Olemasoleva tabeli sees muudatuste tegemine. Lisatud tühjad kantsulud `[]` rea lõpus prindivad muudetud tabeli `DT` ekraaanile. Üldjuhul neid lisama ei pea.
+```{r, eval = F}
+# ühe uue tunnuse lisamine
+DT[, d := a + 5][]
+# mitme uue tunnuse lisamine 
+DT[, c("uus1", "uus2") := .(a + 5, b - 2) ][]
+# mitme uue tunnuse lisamine, variant 2
+DT[, `:=` (uus3 = a + 50, 
+           uus4 = b - 2,
+           b = -b)][]
+# väärtuste muudatus valitud ridades
+DT[c(2, 4),  a := a*10L][]
+# uus tunnus, aga mitte igas reas
+DT[c(2, 4),  uus5 := a*10L][]  
+# tunnuste kustutamine
+DT[, uus5 := NULL][]  
+DT[, c("uus1", "uus2") := NULL][] 
+```
+ 
+
+### Ülesanded
+
+1. Teisenda andmestik `mass` paketi **data.table**  andmetüübiks käsuga `as.data.table(.)`.
+1. Kasutades `DT[i, j, by]` konstruktsiooni leia  mitu meessoost üle 60 aastast on uuritavate hulgas.
+1. Kasutades `DT[i, j, by]` konstruktsiooni leia perekonnaseisu sagedustabel.
+1. Järjesta eelmine tabel sageduste järgi kasvavalt.
+1. Täienda eelmist tabelit gruppide osakaaludega.
+1. Tekita tabel, kus oleks soo ja perekonnaseisu gruppides leitud keskmine vanus, vanuse standardhälve ja levinum haridustase.
+
+```{r, eval = F, echo = F}
+mass <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", header = T, sep = "\t")
+dtmass <- as.data.table(mass)
+is.data.table(dtmass)
+
+
+# sagedus: üle 60 ja mees
+dtmass[SEX == "Male" & AGEP > 60, .N]
+dtmass[ AGEP > 60, .N, by = SEX]
+
+#sagedustabel pereseis
+dtmass[, .(sagedus = .N), by = MAR]
+dtmass[, .(sagedus = .N), by = MAR][order(sagedus)]
+
+# järjestatud tabel,
+tab1 <- dtmass[, .(sagedus = .N), by = MAR][order(sagedus)]
+tab1
+
+
+# osakaalu lisamine
+tab1[, osak := round(sagedus/sum(sagedus), 2),]
+tab1[, jaotus := round(prop.table(sagedus), 2) ]
+tab1
+
+# kas saab   kasutada  defineeritud tunnust kohe samas käsus mingiks muuks arvutseks?
+#dtmass[, {sagedus = .N; jaotus = sagedus/sum(sagedus); list(sagedus = sagedus, jaotus= jaotus)}, by = MAR]
+#dtmass[, .(sagedus = table(MAR), jaotus = table(MAR)),]
+dtmass[, {sagedus = table(MAR); jaotus = prop.table(sagedus); list(sagedus = sagedus, jaotus = jaotus)},]
+
+
+
+# pereseisu soo gruppides vanus, levinum haridustase
+dtmass[, 
+       .(keskv = round(mean(AGEP), 1), 
+         s = round(sd(AGEP), 1), 
+         "levinum haridus" = names(sort(table(SCHL), decreasing = T))[1]), 
+         by = .(MAR, SEX)][order(MAR, SEX)]
+
+
+
+
+
+
+#------- prooviks jooonise teha
+par(mfrow = c(2, 2))
+DT[, druut := d^2]
+DT[, {plot(d, druut, main = c[1], xlim = c(0, 20), ylim = c(0, 250))}, by = c] # grupp EI MÕJU
+ 
+par(mfrow = c(1, 1))
+DT[, {plot(d, druut, main = "graafik", xlim = c(0, 20), ylim = c(0, 250))}]
+ 
+
+
+# vaata siit:
+# http://brooksandrew.github.io/simpleblog/articles/advanced-data-table/#accessing-elements-from-a-column-of-lists
+
+
+```
+
+
+
+

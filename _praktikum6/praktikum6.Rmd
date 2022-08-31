@@ -1,0 +1,417 @@
+---
+title: | 
+  
+  | Rakendustarkvara: R 
+  | 6. praktikum^[Praktikumijuhendid põhinevad aine MTMS.01.092 Rakendustarkvara: R (2 EAP) materjalidel, mille autorid on Mait Raag ning Raivo Kolde]
+output: 
+  html_document:
+    theme: null
+    number_sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, include=FALSE, warning=FALSE}
+library(reshape2)
+library(ggplot2)
+link <- "https://github.com/Rkursus/2021/raw/master/data/"
+mk <- read.table(paste0(link, "maakonnad.txt"), sep = " ", header=T)
+
+
+```
+
+# Pakett ggplot2:  Skaalade muutmine
+Kui `ggplot2`-ga koostada joonis, siis muutujad seostatakse graafiliste elementide omadustega (asukoht x-teljel, asukoht y-teljel, värvus, suurus jne). Vaikimisi kasutatakse küllalt mõistlikke skaalasid, nt värviskaalad on valitud selliselt, et kõik värvid oleks võrdse intensiivsusega. Mõnikord on aga soov skaalasid muuta. Selleks saab kasutada käske `scale_<graafilise elemendi omadus>_<skaala nimi>`. Näiteks `scale_x_continuous(.)` käsuga saab muuta x-telje vahemikku, `scale_colour_grey(.)` muudab värviskaala mustvalgeks.
+
+Kõiki skaalade muutmise funktsioone on võimalik näha ggplot2 kodulehel http://ggplot2.tidyverse.org/reference/  jaotuse "Scales" all.
+
+Skaleerimisfunktsiooni rakendamiseks tuleb see lisada joonisele:
+```{r}
+p2 <- ggplot(mk, aes(per_capita_inc, unemployment_rate, colour = State)) + geom_point()
+p2 + scale_x_continuous(trans = "log10", breaks = c(1/2, 1:4) * 10^4)
+```
+```{r, eval=FALSE, include=FALSE}
+p2 + scale_x_continuous(trans = "log10", breaks = c(1/2, 1:4) * 10^4, limits = c(1/2,  4) * 10^4)
+```
+Eelneva käsuga lisati x-telje skaala muudatus: telg kuvatakse logaritmilisel skaalal, `breaks` määrab teljel esitatavad arvväärtused.
+
+
+Iga erineva omaduse skaala muutmiseks saab joonisele "juurde liita" uue funktsiooni. Konkreetse funktsiooni parameetrid sõltuvad omaduse tüübist (nt punkti kuju ei saa logaritmida), aga kõigil skaleerimisfunktsioonidel on kindlasti kolm argumenti:
+  
+* `name` -- telgede puhul telje nimi; värvide, kuju jm legendis antava info puhul vastava legendi 
+pealkiri
+* `breaks` -- vektor väärtustega, mis määravad, millised väärtused joonisel ära markeeritakse (nt x-telje jaotis)
+* `labels` -- parameetriga `breaks` määratud punktidele vastavad sildid
+```{r, echo = F, eval = F}
+p2  + scale_x_continuous(name = "Per capita income", breaks = c(10000, 40000),
+                         labels = c("Low", "High")) +
+  scale_colour_hue(name = "State name", breaks = c("Alaska", "Texas"))
+```
+
+x-ja y-telgi ja teisi skaalasid (mh nende nimesid) saab muuta vastava `scale`-käsuga, ent on veel võimalusi lisada telgedele/skaaladele nimed ja piiritleda väärtusvahemikku:
+  
+* `xlab(.)`, `ylab(.)` -- vastavate telgede pealkirjad
+* `labs(.)` -- saab määrata nii telgede, legendi elementide ka kui graafiku pealkirja (`x = "..."`, `y = "..." `, `color = "..." `,  `title = "..." `)
+* `xlim(.)`, `ylim(.)` -- argumendiks kaks väärtust, mis määravad telgede väärtusvahemiku. NB! objektid, mille väärtused on väljaspool määratud vahemikku asendatakse `NA` väärtusega ja jäetakse välja kõigilt kihtidelt.
+* `lims(.)` -- üldine skaalapiiride määramise käsk, lisaks x- ja y-telgedele saab piire määrata ka näiteks värviskaalale. Kui värviskaala on seotud osariigi nimega, siis määramaks värvi ainult kahele osariigile tuleks käsk kirja panna kujul: `lims(color = c("Alaska", "Texas"))`.
+* `coord_cartesian(.)` -- argumentidega `xlim`, `ylim` saab määrata xy-teljestikus väärtusvahemikud, mis nähtavale jäävad. See on võimalus joonise mingile piirkonnale 'suumida'. Joonisest lõike tegemine.
+* `ggtitle(.)` -- joonise pealkiri.
+
+<!--
+Näiteks joonise pealkirja ja teljetiitlite muutmine ning telgede väärtusvahemiku määramine y-teljel andmetest väärtusvahemiku valimise teel, x-teljel joonisest lõike tegemise teel:-->
+```{r, warning=F, eval =FALSE, echo = F}
+p2 + ylab("töötuse määr") + labs(title = "Siia pane pealkiri", x = "xtelg" ) + 
+  ylim(0, 7) + coord_cartesian(xlim = c(9000, 20000))
+```
+
+
+Teljepiiride määramine `ylim(.)` või `xlim(.)` käsuga võib mõjutada joonisel esitatavaid arvutuslikke tulemusi. Näiteks kui joonisel esitada keskväärtused koos usalduspiiridega ning  määrata teljepiirid nii, et mõni arvutuse aluseks olev vaatlus jääb piiridest välja, siis muutuvad ka usalduspiirid. Näide sellisest olukorrast on järgmisel joonisel (siin on  kasutuses on teine näiteandmestik: rottide kehakaalu ja dieetide andmestik) 
+
+```{r, eval = F, fig.height=2.6}
+rotid <- nlme::BodyWeight  
+rotid <- rotid[rotid$Diet != 1, ]  
+p <- ggplot(rotid, aes(factor(Time), weight)) + geom_point(color = "gray") + 
+  stat_summary(geom = "errorbar", fun.data = mean_se, fun.args = list(mult = 1.96)) +
+  stat_summary(geom = "point", fun = mean) + 
+  geom_hline(yintercept = 600, color = "red")
+
+p
+p + ylim(390, 600)
+```
+```{r,echo=FALSE,fig.height=3. ,fig.width=3.}
+rotid <- nlme::BodyWeight # andmestik kodutööst
+rotid <- rotid[rotid$Diet != 1, ]  
+p <- ggplot(rotid, aes(factor(Time), weight)) + geom_point(color = "gray") + 
+  stat_summary(geom = "errorbar", fun.data = mean_se, fun.args = list(mult = 1.96)) +
+  stat_summary(geom = "point", fun = mean) + 
+  geom_hline(yintercept = 600, color = "red")
+p
+```
+```{r,echo=FALSE,fig.height=3.,fig.width=3., warning=FALSE}
+p + ylim(390, 600)
+```
+```{r,echo=FALSE,fig.height=3.,fig.width=3., fig.show='hide'}
+p + ylim(390, 600)  
+```
+
+Kuna kolm vaatlust andmetes on üle 600, siis määratud piir `ylim(390, 600)` jätab need välja kõigilt kihtidelt. Väljundisse tuleb kolm hoiatust, üks hoiatus iga lisatava kihi kohta (hajuvusdiagramm, usalduspiirid ja keskväärtus punktina kiht). Parempoolsel joonisel on muutunud kolm viimast usaldusintervalli, sest nendest gruppidest eemaldati väärtused.
+
+
+
+
+
+## Pidevate/arvuliste skaalade muutmine
+Pidevate skaalade muutmise käskudel (nt `scale_<?>_continuous`, `scale_<?>_gradient`) on mõned spetsiifilised argumendid:
+  
+* `trans` -- skaala transformeerimise funktsiooni nimi, nt "exp", "log", "log10", "sqrt".
+* `limits` -- kahe-elemendiline vektor, mis annab skaala algus- ja lõpp-punkti. Sarnalset `xlim(.), ylim(.)` käskudega tuleb selle argumendi kasutamisel olla tähelepanelik, sest andmed, mis vastavast vahemikust välja jäävad asendatakse `NA` väärtustega. Selle toimingu mõju sõltub muudetavast skaalast: x-ja y-telgede piiride määramisel tähendab see, et neid andmeridu ei kasutata joonise tegemisel (nt ka regressioonisirge arvutamisel). Värviskaala korral määrab see objektid, millele värvi ei määrata(vt alapunkt "Värviskaala muutmine").
+
+Arumendi `trans` kasutamise näide on toodud praktimijuhendi alguses: x-telje skaala on sellel joonisel logaritmiline.
+
+<!-- 
+Argumendi `limits` mõju võrrelduna graafikult lõike tegemisega (`coord_cartesian`) vaata järgmistel joonistel regressioonsirgeid võrreldes. 
+
+```{r,warning=FALSE, eval = F}
+p2 + geom_smooth(method = lm) + scale_x_continuous(limits = 1:2*10^4) +
+  labs(title = "x-teljel kasutame ja näeme\npunkte vahemikus 10000-20000")  
+p2 + geom_smooth(method = lm) + coord_cartesian(xlim = 1:2*10^4) +
+  labs(title = "kasutame kõiki punkte, tulemust\nnäeme vahemikus 10000-20000")
+```
+```{r,echo=FALSE,fig.height=3.5,fig.width=3., warning=FALSE}
+p2 + geom_smooth(method = lm) + scale_x_continuous(limits = 1:2*10^4) +
+  labs(title = "x-teljel kasutame ja näeme\npunkte vahemikus 10000-20000") + 
+  guides(color = FALSE) + theme(title = element_text(size = 9))
+#
+p2 + geom_smooth(method = lm) + coord_cartesian(xlim = 1:2*10^4) +
+  labs(title = "kasutame kõiki punkte, tulemust\nnäeme vahemikus 10000-20000") + 
+  guides(color = FALSE)+
+  theme(title = element_text(size = 9))
+```
+-->
+
+
+## Diskreetsete skaalade muutmine
+Diskreetsetel skaaladel töötab argument `limits` teistmoodi: nimelt saab sellega ette anda konkreetsed väärtused, mida joonisel kujutatakse, ülejäänud väärtusi siis joonisel ei kujutata. Oluline on ka väärtuste etteandmise järjekord:
+```{r,warning=FALSE, fig.width=3,   fig.show='hold'}
+b <- ggplot(data = mk, aes(State, unemployment_rate)) + geom_boxplot() 
+b + scale_x_discrete(limits = c("Texas", "Maryland", "Alaska")) 
+#Võrdle, mis mõju on argumendil `breaks`:
+# b +  scale_x_discrete(breaks = c("Texas", "Maryland", "Alaska")) 
+```
+
+Kui joonise värvid on määratud diskreetsel skaalal, `siis` limits argumendiga saab määrata millisete väärtusklasside elemendid värvitakse ja millised jäetakse värvimata (vaikimisi jäävad halliks):
+```{r,warning=FALSE, fig.width=3, fig.show='hide', eval = F}
+b1 <- ggplot(data = mk, aes(bachelor, unemployment_rate, color = State)) + geom_point()
+b1 + scale_color_discrete(limits = c("Texas", "Maryland", "Alaska")) 
+# NA väärtuse värvi saab ka muuta
+b1 + scale_color_discrete(limits = c("Texas", "Maryland", "Alaska"), na.value = "white")
+```
+```{r,warning=FALSE, fig.width=3.4, fig.height=3,  fig.show = "hold" , echo = F}
+b1 <- ggplot(data = mk, aes(bachelor, unemployment_rate, color = State)) + geom_point()
+b1 + scale_color_discrete(limits = c("Texas", "Maryland", "Alaska")) 
+b1 + scale_color_discrete(limits = c("Texas", "Maryland", "Alaska"), na.value = "white")  
+```
+ 
+
+
+
+### Ülesanded
+
+Eelnevalt on tehtud hajuvusdiagramm
+USA maakondade andmestiku põhjal, et iseloomustada kõrgharidusega ja keskkooliharidusega inimeste osakaalu seost:
+```{r, eval = F}
+joonis <- ggplot(data = mk, aes(x = high_scl, y = bachelor)) + geom_point()
+joonis
+```
+
+1. Pane  tehtud joonisel y-telje nimeks "Higher education percentage"; muuda telje vahemikku (0, 100); muuda teljel olevaid silte ja nende paigutust nii, et need oleksid kujul 0%, 25%, 50%, 75%, 100%.
+1. Määra joonisel  punktide värv sissetuleku tunnuse `per_capita_inc` järgi. Määra legendil tunnuse nimeks `Per capita income`(kasuta käsku `scale_color_continuous(.)` või `labs(.)`).
+1. Jaga tunnuse `per_capita_inc` väärtused viide vahemikku nii, et igas vahemikus oleks üks viiendik vaatlustest. Pane uuele tunnusele nimi `income_class` ja sildista tekkinud väärtusklassid `"Very low", "Low", "Medium", "High", "Very high"`.
+1. Lisa nüüd joonisele, mis tehtud ülesandes 1,   värviga tunnus `income_class` nii, et värvitaks ainult punkte, kus sissetulek on kas väga kõrge või väga madal (`scale_color_discrete(.)`).
+1. Proovi, mis on tulemus kui `scale_color_discrete(.)` käsule lisada argument `guide = "none"` (`guide = FALSE`).
+
+```{r, echo = F, eval = F, results ='hide'}
+#-- 1
+j <- ggplot(data = mk, aes(x = high_scl, y = bachelor)) + geom_point()# 
+j + scale_y_continuous(name = "Higher education percentage", limits = c(0, 100))
+
+
+j1 <- j + scale_y_continuous(name = "Higher education percentage", 
+                             breaks = seq(0, 100, 25), 
+                             labels = c("0%", "25%", "50%", "75%", "100%"), 
+                             limits = c(0, 100))
+
+library(scales)
+# peaks olema osakaalu sakaalal!
+j + scale_y_continuous(name = "Higher education percentage",  labels = percent, limits = c(0, 100))
+osakaaluks_trans = function() trans_new(name = "osakaaluks", transform = function(x) x/100 , function(x) x*100)
+j + scale_y_continuous(name = "Higher education percentage",   trans = "osakaaluks")
+j + scale_y_continuous(name = "Higher education percentage",   trans = "osakaaluks",  labels = percent, limits = c(0, 100))
+
+j <- ggplot(data = mk, aes(x = high_scl, y = bachelor/100)) + geom_point()# 
+j
+j1 <- j + scale_y_continuous(name = "Higher education percentage", labels = percent, limits = c(0, 1))
+j1
+
+#-- 2
+mk$income_class <- cut(mk$per_capita_inc, 
+                       br = quantile(mk$per_capita_inc, c(0, 0.2, 0.4, 0.6, 0.8, 1)),
+                       include.lowest = T, 
+                       labels = c("Very low", "Low", "Medium", "High", "Very high"))
+
+j1 + geom_point(data = mk, aes(colour = income_class)) 
+j1 + geom_point(data = subset(mk, income_class %in% c("Very low", "Very high")), 
+                aes(colour = income_class)) 
+
+j1 + geom_point(data = mk, aes(colour = income_class)) 
+j1 + geom_point(data = mk, aes(colour = income_class))  + 
+  scale_colour_hue(limits = c("Very low", "Very high"))
+
+
+j <- ggplot(data = mk, aes(x = high_scl, y = bachelor)) +
+  geom_point(aes(colour = unemployment_rate-10))# 
+j
+j + scale_color_gradient2( )
+
+
+
+
+ggplot(mk, aes(State, fill = income_class)) + geom_bar(position = "fill")
+
+```
+
+
+
+## Värviskaala värvide muutmine
+
+Värvide valik joonisel on väga oluline. Õigesti valitud värvidega on võimalik tuua selgemini välja oma sõnumit, muuta joonist loetavamaks ja meeldivamaks. Asjakohane värvus sõltub tunnusest, mida soovitakse kujutada. Üldiselt võib värviskaalad jaotada kolmeks:
+  
+* gradient -- pidevate tunnuste jaoks; kõige väiksem ja kõige suurem väärtus vastavad mingitele värvidele ning vahepealsed väärtused nende kahe värvi segule
+* lahknev gradient -- pidevate tunnuste jaoks, kui pideval tunnusel on mingi selge nullpunkt (nt õhutemperatuur, tsentreeritud skoor vms); kaks ekstreemset väärtust ja nullpunkt vastavad mingile puhtale värvile, vahepealsed väärtused kahe värvi segule.
+* kvalitatiivne -- diskreetsete tunnuste jaoks; iga väärtuse jaoks kasutatakse võimalikult erinevat värvitooni. Samas on oluline silmas pidada, et heleduselt ja intensiivsuselt oleks kõik värvid võrdsed.
+
+Gradientskaalat saab kontrollida käsuga `scale_<?>_gradient(.)` (küsimärgi asemel on tavaliselt `fill` või `colour`). Saab kasutada kõiki pideva tunnuse skaala muutmise argumente, ning lisaks on kaks argumenti: `low` ja `high` ekstreemsete väärtuste värvi määramiseks gradiendil. Lahknevat gradienti saab kontrollida funktsiooniga `scale_<?>_gradient2(.)`, millel on lisaks `low` ja `high` väärtustele argument `mid` millega saab ette värvi nime, mis vastab nullpunktile, vaikimisi on see värv valge. Skaala nullpunkti väärtuse saab ka ise ette anda. Lahknevat ja veel keerulisemaid gradiente saab määrata funktsiooniga `scale_<?>_gradientn`, mille argumendile `colours` saab ette anda vektori värvidega, mille vahele siis uued värvid sujuva üleminekuga valitakse.
+
+
+Näited kahe gradientskaala käsu kasutamisest:
+  
+```{r, eval = F}
+p3 <- ggplot(data = mk, aes(per_capita_inc, unemployment_rate)) + 
+  geom_point(aes(colour = bachelor ))
+``` 
+\pagebreak
+```{r, eval = F}
+nimi = "% w/ higher \n education"
+p3 + scale_colour_gradient(name = nimi, low = "yellow", high = "red")
+p3 + scale_colour_gradient2(name = nimi, low = "blue", high = "red", midpoint = 30)
+```
+```{r, fig.height= 3, fig.width=3.4, echo = F}
+p3 <- ggplot(data = mk, aes(per_capita_inc, unemployment_rate)) + 
+  geom_point(aes(colour = bachelor ))
+nimi = "% w/ higher \n education"
+p3 + scale_colour_gradient(name = nimi, low = "yellow", high = "red")
+p3 + scale_colour_gradient2(name = nimi, low = "blue", high = "red", midpoint = 30)
+```
+
+
+
+
+
+
+
+Diskreetsete/kvalitatiivsete värviskaalade kontrollimiseks kasutatakse vaikimisi funktisooni `scale_<?>_hue(.)`, mis valib HCL värviskaalal^[http://en.wikipedia.org/wiki/Munsell_color_system] parameetri `h` (*hue* värvitoon) väärtused võimalikult erinevad, jättes värvi tugevuse `c` (*chroma*) ja heleduse `l`(*luminance, lightness*) konstantseks. Nii saadakse võimalikult erinevad värvid, mis samal ajal on ühesuguse intensiivsusega.
+```{r, fig.height= 3, fig.width=3, eval = F}
+p4 <- ggplot(mk, aes(per_capita_inc, unemployment_rate)) + geom_point(aes(colour = State ))
+p4 
+p4 + scale_colour_hue(c = 150) # tugevus suuremaks, vaikimisi 100
+#p4 + scale_colour_hue(l = 20) # heledus madalamaks, vaikimisi 65
+#p4 + scale_colour_hue(h = c(10, 190)) # kaks värvitooni, skaala algus- ja lõpptoon
+```
+```{r, fig.height= 3, fig.width=3.4, echo = F}
+p4 <- ggplot(mk, aes(per_capita_inc, unemployment_rate)) + geom_point(aes(colour = State ))
+p4 
+p4 + scale_colour_hue(c = 150) # tugevus
+#p4 + scale_colour_hue(l = 20) # heledus [0, 100]
+#p4 + scale_colour_hue(h = c(10, 190)) # kaks värvitooni, skaala algus ja lõpp
+```
+
+
+
+Diskreetsete värviskaalade jaoks on arendatud värvipalett "Colorbrewer"^[http://www.colorbrewer2.org] (algselt arendatud maakaartide värvimiseks). `ggplot2`-s pääseb sellele paletile ligi funktsiooniga `scale_<?>_brewer(.)`, millel on kaks argumenti: 
+  
+* `type` -- võimalikud väärtused on `"seq"`, `"div"` ja `"qual"`
+* `palette` -- paleti number (vt http://www.colorbrewer2.org)
+
+```{r, fig.height= 3, fig.width=3, eval = F}
+p4 + scale_colour_brewer(type = "div", palette = 2) 
+p4 + scale_colour_brewer(type = "qual", palette = 2)  
+```
+```{r, fig.height= 3, fig.width=3.4, echo = F}
+p4 + scale_colour_brewer(type = "div", palette = 2) 
+p4 + scale_colour_brewer(type = "qual", palette = 2)  
+```
+
+
+
+
+### Ülesanded
+
+1. Proovi eelmises ülesandes tehtud joonisel (`high_scl` ja `bachelor`) valida tunnuse `income_class` jaoks selline värviskaala, mis  http://www.colorbrewer2.org väitel on ka värvipimedatele loetav.  
+
+
+
+
+
+
+# Joonise viimistlemine
+
+Vaikimisi joonistab `ggplot2` halli taustaga jooniseid -- et heledamad värvid oleksid sama silmatorkavad kui tumedad. Kui on soov valge tausta järele, siis seda saab tellida, lisades joonisele käsu `+ theme_bw()`. Veelgi detailsemalt saab joonise kujundust käsuga `+ theme(.)`, mille argumentidest mõned olulisemad on:
+  
+  
+  Argument  |  Elemendi tüüp | Selgitus
+----------|----------------|-----------
+line      |  line          | kõik jooned
+rect      |  rect          | kõik ristkülikulised elemendid (taustad, raamid)
+text      |  text          | kõik tekstid
+axis.line |  line          | joonise teljed
+axis.text.x | text         | x-telje väärtused
+axis.text.y | text         | y-telje väärtused
+axis.ticks  | line         | joonise jaotised
+axis.title.x | text        | x-telje pealkiri
+axis.title.y | text        | y-telje pealkiri
+legend.background | rect   | legendi taust
+legend.key | rect | legendi võtme taust
+legend.text | text | legendi tekst
+legend.title | text | legendi pealkiri
+panel.background | rect | graafiku taust
+panel.border | rect | graafikut ümbritsev raam
+panel.grid.major | line | jaotise jooned
+panel.grid.minor | line | jaotise jooned
+plot.background | rect | kogu joonise taust
+plot.title | text | joonise pealkiri
+strip.background | rect | tahkude pealkirjade taust
+strip.text.x | text | horisontaalsete tahkude pealkiri
+strip.text.y | text | vertikaalsete tahkude pealkiri
+
+
+
+Täielikum loetelu `theme(.)` võimalikest argumentidest on aadressil http://ggplot2.tidyverse.org/reference/#section-themes .
+  
+Nagu näha, on kolm peamist elemenditüüpi, mida saab muuta käskudega `element_text(.)`, `element_line(.)` ja `element_rect(.)`. Nendel käskudel on omakorda argumendid:
+  
+* `element_text(.)` -- `family`, `size`, `colour`, `angle`, `hjust`, `vjust` kontrollivad teksti šrifti, suurust, värvi, kaldenurka ja positsiooni vaikimisi määratud koha suhtes. Näiteks  `size=14` valib teksti punktisuuruseks 14pt.   
+* `element_line(.)` -- `colour`, `size`, `linetype`;
+* `element_rect(.)` -- `colour`, `size`, `linetype` ääre muutmiseks, `fill` sisemuse värvi muutmiseks
+
+Kui mõnda elementi üldse joonisel ei soovi näha, siis tuleb vastavale argumendile anda väärtus `element_blank()`.
+
+
+
+
+### Ülesanded
+
+
+1. Muuda eelmises ülesandes tehtud joonisel (`high_scl` ja `bachelor` hajuvusdiagramm tunnuse `income_class` järgi värvitud) 
+   - legendi asukohta, paiguta see joonise alla
+   - x-telje siltide paigutust, pööra silte 45 kraadi
+   - lisa joonisele pealkiri, määra selle punktisuuruseks 20pt
+
+```{r,echo=FALSE, warning=FALSE, fig.height=4.5, fig.width=5, eval = F}
+# mk$Income_factor <- cut(mk$per_capita_inc, 
+#                         quantile(mk$per_capita_inc, c(0, 0.2, 0.4, 0.6, 0.8, 1)), 
+#                         include.lowest = T, 
+#                         labels = c("Very low", "Low", "Medium", "High", "Very high"))
+# 
+# qplot(high_scl, bachelor, data = mk, colour = Income_factor, ylab = "Bachelors", xlab = "High school graduates", main = "Education and income") +
+#   scale_colour_brewer(type = "div", palette = 5, name = "Income \n factor") + 
+#   scale_x_continuous(breaks = seq(20, 100, 10)) +
+#   theme(panel.background = element_rect(fill = "lightgreen"), axis.text.x = element_text(angle = 45, vjust = 1), axis.ticks.x = element_blank(),
+#         text = element_text(family = "Times", size = 14), plot.title = element_text(size = 20), panel.grid.major.x = element_line(size = 2))
+
+#install.packages("extrafont")
+#library(extrafont)
+#font_import() # import all your fonts
+#fonts()
+
+
+ggplot(data = mk, aes(high_scl, bachelor, colour = Poverty_factor)) + 
+  geom_point( ) +   # üks NA Povertiga läeb kaotsi, warning
+  labs(y = "Bachelors", x = "High school graduates", title = "Education and income") +
+  scale_colour_brewer(type = "qual", palette = 2, name = "Poverty:", limits = c("Low", "Medium", "High"), na.translate = FALSE) + 
+  scale_x_continuous(breaks = seq(20, 100, 10)) +
+  scale_y_continuous(position = "right")+
+  theme(
+    text = element_text(size = 12), 
+    plot.title = element_text(size = 20),
+    axis.text.x = element_text(angle = 45, vjust = 1), 
+    axis.ticks.x = element_blank(),
+    panel.grid.major.x = element_line(size = 2),
+    panel.background = element_rect(fill = "lightgreen", color = "green"),
+    legend.key = element_rect(fill = "lightgreen"),
+    legend.key.size = unit(1, "cm"),
+    legend.position = "bottom"
+  )   
+
+
+
+#library(extrafont)
+#font_import()  # seda ainult korra vaja teha! Pannakse kuskile kausta, kus lisapaketid jne
+#loadfonts(device = "win")
+
+ggplot(data = mk, aes(high_scl, bachelor, colour = Poverty_factor)) + 
+  geom_point( ) +   # üks NA Povertiga läeb kaotsi, warning
+  labs(y = "Bachelors", x = "High school graduates", title = "Education and income") +  
+  
+  theme(text = element_text(size = 12, family = "Vladimir Script"))
+
+# et fonte, nimeseid, näha
+#windowsFonts()  
+#fonts()
+
+
+```
+
+
+
+
+ 

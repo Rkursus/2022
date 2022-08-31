@@ -1,0 +1,172 @@
+---
+title: | 
+  | Rakendustarkvara: R 
+  | 10. praktikum^[Praktikumijuhendid põhinevad aine MTMS.01.092 Rakendustarkvara: R (2 EAP) materjalidel, mille autorid on Mait Raag ning Raivo Kolde]
+  
+output: 
+  html_document:
+    theme: null
+    number_sections: true
+---
+
+
+# Tulemuste vormistamine 
+
+Sageli kõige tüütum andmeanalüüsi juures on tulemuste vormistamine ilusaks dokumendiks. R-i väljund on tavaliselt kas konsoolis või graafikaaknas. Isegi kui tulemused on konsooliaknas tabelina, on seda Wordi vms programmi ümber tõsta tülikas. Õnneks on ka selle probleemi lahendamiseks R-is mitmeid erinevaid pakette, mille tööpõhimõte on sarnane:
+
+1. Kirjutada oma analüüsi tekst koos vahepealsete koodiridadega ühte tekstifaili.
+1. See fail kompileerida sobivasse formaati (nt word, html, tex või pdf).
+
+Kui kasutada RStudiot, siis on taolise analüüsiraporti koostamine väga lihtne. Oletame, et punktis 1. nimetatud fail on näiteks järgmise sisuga:  
+<!---Väga paindlik pakett on **Sweave**, mis produtseerib tex ja html formaadis dokumente.
+Käesolevas kursuses tutvume  paketiga **knitr**^[http://yihui.name/knitr/]. Selle paketi kõige olulisem käsk on `knit(.)`, millele tuleb ette anda punktis 1. koostatud faili nimi. Selles failis on mingis formaadis tekst ja R-i kood vaheldumisi, näiteks nii:-->
+
+```{r,eval=TRUE,results='hold',echo=FALSE,comment=""}
+load("../data/andmed.RData")
+cat("---\noutput: pdf_document\n---\n# Esimene arvutus\n```{r,echo=FALSE}\nmass <- read.table(\"https://github.com/Rkursus/sygis2019/raw/master/data/mass.txt\", sep =\"\\t\", header = T)\n```\nMassachusettsi andmestikus on kokku `r nrow(mass)` inimest; sooline jaotus on järgnev:\n```{r,echo=FALSE}\ntable(mass$SEX)\n```\n## Esimene alapunkt\nNüüd on lisaks tulemusele endale näha, milline koodijupp leiab keskmise vanuse:\n```{r,echo=TRUE}\nmean(mass$AGEP)\n```\n")
+```
+<br>
+See fail peaks olema salvestatud laiendiga *.rmd* ja avatud RStudios, siis vastava pdf-faili saab kompileerida kui vajutada menüüribal lõngakeraga nuppu *Knit*. Kui avada sama nupu noolemärgist rippmenüü, siis saab ka muuta koostatava faili tüüpi: *Knit to PDF* asemel võib valida ka  *Knit to HTML* või  *Knit to Word*. NB! Pdf-faili tegemine eeldab, et arvutis on olemas MikTeX vms kui seda pole, siis peaks piisama kui läbi teha järgmised käsud:
+```{r, echo=TRUE, eval = FALSE}
+install.packages('tinytex')
+tinytex::install_tinytex()
+```
+
+ 
+
+<!--
+Oletame, et ülaltoodud ridu sisaldava faili nimi on "minuraport.Rmd". Kui R-i konsoolile anda käsk
+```{r, echo=TRUE, eval = FALSE}
+library(knitr)  # kui pole arvutis, siis enne installeerida
+knit("minuraport.Rmd")
+```
+tunneb R ära, et tegemist on **markdown**-märgenduskeeles koodiga (täpsemini R-i-spetsiifilise markdown keelega) ning töökausta genereeritakse fail `minuraport.md`, kus R-i käsud on asendatud tulemustega (nt `mean(x)` on asendatud: `3.5`). Selle faili saab teegis **markdown**^[http://rmarkdown.rstudio.com/] oleva käsu `markdownToHTML(.)` abil muuta HTML-failiks:
+```{r, echo=TRUE, eval = FALSE}
+library(markdown) # kui pole arvutis, siis enne installeerida
+markdownToHTML("minuraport.md", output = "valmisraport.html")
+browseURL("valmisraport.html")
+```
+-->
+
+Selleks, et raporti genereerimine ise läbi proovida kontrolli kõigepealt kas installeeritud on paketid **knitr** ja **rmarkdown**. Seejärel ava uus markdown fail valides menüüst `File -> New file -> R Markdown`. Pane  analoogselt ülaltoodud näitega faili kirja oma tekst ja märgendite vahele R-i kood, mis teeb arvutused, salvesta fail laiendiga *.rmd* ja vajuta nuppu *Knit to ...*. Markdown märgendkeeles faili vormistamise abi saamiseks vaata näiteks http://rmarkdown.rstudio.com/pdf_document_format.html
+
+Ülalolevas näites on teksti vahele pikitud R-i koodi nn juppide/plokkide ehk *chunk*idega. Jupp võib olla nn reasisene ehk *inline*, või täiesti eraldiseisev. Reasisene R-i koodijupp tuleb piirata graavise sümboliga (*backtick*), mida eesti paigutusega klaviatuuril leiab *backspace* klahvi kõrvalt; reasisese koodijupi alguses peab olema täht `r`.  
+
+Sageli on mõttekas kasutada täiesti eraldiseisvaid koodiplokke, mis tuleks piirata kolmekordse graavisega. Ploki alguses tuleb loogelistes sulgudes kõigepealt kirjutada täht `r`, seejärel võib kirjutada komaga eraldatult lisaargumente^[http://yihui.name/knitr/options].
+Mõned olulisemad:
+
+* `echo` -- kas väljundis peaks ka R-i kood olema näha (TRUE/FALSE)
+* `eval` -- kas koodiplokis olev kood täita või mitte (TRUE/FALSE)
+* `fig.width`, `fig.height` -- kui koodiplokis tehakse joonis, siis mis mõõtmetega see peab olema.
+* `results` -- kuidas vormindada väljundit (konsooli väljatrükki); väärtus `'asis'` on paslik sel juhul, kui kasutame mingit spetsiifilist vorminduskäsku (nt `xtable(.)`). Väärtuse `'hide'` korral väljundite ei näideta. 
+
+Oluline on, et eraldiseisva koodiploki algus ja lõpumärgised oleks eraldi real ja ilma eelneva tühikuta. RStudios on koodiploki märgendeid lihtne lisada klahvikombinatsiooni `Ctrl + Alt + I` abil või vajutades vastavat nuppu (*Insert*)  menüüreal.
+
+
+Koodiplokkide vahelise teksti puhul mõned olulisemad märgendusvõtted^[http://rmarkdown.rstudio.com/authoring_basics.html]:
+
+* `# Pealkiri` -- esimese taseme pealkiri
+* `## alapealkiri` -- teise taseme pealkiri jne  (kuni 6 taset)
+* Uue lõigu alustamiseks jätta üks tühi rida vahele
+* Nummerdamata loetelu elementide ette näiteks `-` või `*`; loetelu ees peab olema tühi rida
+* Nummerdatud loetelu kõigi elementide ette `1.` 
+* Käsitsi saab tabelit vormistada miinusmärgi ja püstkriipsude abil
+* allmärkuseid saab nii: `mingitekst^[allmärkuse tekst]`
+
+Nii on võimalik R-i väljundit mugavasti ühte faili saada, et ei peaks pidevalt kopeerima-kleepima. Kuidas aga R-i produtseeritavad tabelid ilusaks saada?  Lihtsamad tabelid saab kujundada **knitr** käsu `kable` abil. Näiteks kui eelnevalt on moodustatud tabel `tabel0`:
+
+```{r  warning=FALSE,  message=FALSE}
+library(dplyr)
+tabel0 <- mass %>% group_by("Kodakondsus" = CIT) %>% 
+  summarise("Keskmine vanus" = mean(AGEP), "Vanuse standardviga" = sd(AGEP)/sqrt(n()),
+            "Soo ülekaal" = ifelse(sum(SEX == "Male") > n()/2, "Mehed", "Naised"))
+```
+siis tabeli esitamiseks väljundis on vaja lisada koodiplokk kujul (`format` määrab väljundi tüübi  näiteks `latex`, `html`):
+
+      ```{r koodijupp tabeli tegemiseks 1, results = 'asis'}`r ''`
+      library(knitr)
+      kable(tabel0, digits = c(1, 2), align = c("lccr"), format = "markdown")
+      ```      
+
+```{r, results = 'asis',  echo = F }
+library(knitr)
+kable(tabel0, digits = c(1, 2), align = "lccr",  format = "markdown")
+```
+On olemas ka spetsiaalseid pakette R tabelite esitamiseks ja näiteks mudelite väljundi ilusaks esitamiseks. Üks sellistest pakettidest on **xtable**, mille kõige olulisem käsk `xtable(.)` produtseerib etteantud tabelist (või vähegi tabelit meenutavast objektist, nt `data.frame`'ist) sobiliku LaTeX või HTML koodi:
+
+     ```{r koodijupp tabeli tegemiseks 2, results='asis'}`r ''`
+     library(xtable)
+     tabel0 <- table(mass$CIT, mass$SEX)
+     tabel <- xtable(tabel0, caption = "Sagedustabel", align = c("r|cc"))
+     print(tabel, type = "latex", comment = FALSE) # type = "latex" tabel LaTeX koodis
+     ``` 
+```{r, results='asis', warning=FALSE, echo = F}
+library(xtable)
+tabel0 <- table(mass$CIT, mass$SEX)
+tabel <- xtable(tabel0, caption = "Sagedustabel", align = c("r|cc"))
+print(tabel, type = "latex", comment = FALSE) # type = "latex" tabel LaTeX koodis
+```
+
+Lineaarse mudeli koefitsentide esitus tabeli kujul:
+
+    ```{r mudeli kordajad, results = 'asis'}`r ''`
+    mudel <- lm(WAGP ~ WKHP, data = mass)
+    print(xtable(mudel))
+    ```
+```{r, results = 'asis', echo = F}
+mudel <- lm(WAGP ~ AGEP + I(AGEP^2) + LANX + CIT + SEX*WKHP, data = mass)
+print(xtable(mudel), comment = FALSE)
+```
+ 
+ 
+
+## Veel võimalusi  vormistamiseks
+
+R koodi ja  analüüsiteksti võib siduda ka  LaTeX keelt kasutades. Sellega alustamiseks vali menüüst: `File -> New file -> R Sweave`. Tekkiv fail salvesta laiendiga *.rnw*. Sel juhul võib teksti vormistamise osas järgida LaTeX reegleid. 
+
+Kui tekstireal on vaja teha mingi arvutus, siis selleks on käsk `\Sexpr{}`, mille argumendiks võib anda mingi muutuja koodist või arvutustehte.  Eraldiseisvate koodiplokkide algusmärgendiks on `<<>>=` ning lõpumärgiks `@`, ka siin peavad koodijupi algus ja lõpumärgised olema eraldi real ja ilma eelnevate tühikuteta. Koodiploki argumendid on samad, mis välja toodud markdown variandi juures, argumendid tuleb panna märgendite vahele, näiteks  `<<echo = TRUE, results = 'hold'>>`. Teksti ja koodi siduva faili genereerimiseks vajutada munüüreal nuppu *Compile PDF*.
+
+
+
+ 
+ 
+<!--\pagebreak-->
+ 
+
+# Kordamiseks
+
+Läbitud teemade kordamiseks tee läbi järgmised ülesanded. Kasutatavas andmestikus on andmed maailma riikide rikkuse kohta, see sisaldab infot riikide rahvaarvu, koguvara ning erinevate maavarade ja loodusressursside osa kapitalist. Kõik rahanumbrid on dollarites inimese kohta.
+
+
+Ülesanded vormista RMarkdown keeles või LaTeX abil.
+
+
+## Ülesanded
+
+1. Loe sisse andmestik WB.txt aadressilt https://github.com/Rkursus/2021/raw/master/data/. (NB! pane tähele kuidas
+on tähistatud tühjad lahtrid)
+1. Andmeid vaadates on näha, et osade riikide kohta on süstemaatiliselt andmed puudu.
+- Kui palju neid riike on?
+- Tekita uus andmestik, kus need riigid on välja visatud.
+Kasuta selle ülesande täitmiseks tunnust `Population`.
+3. Mitu erinevat regiooni on esindatud selles andmestikus? Kui palju erinevaid riike igast
+regioonist on?
+1. Kuidas on jaotunud riigid regiooni ja jõukuse kaupa? Koosta tabel, kasutades sobivaid tunnuseid.
+1. Tekita tunnus nn naftariikidest ja neist kellel seda pole (tunnuse `Oil` väärtus peab olema suurem kui 0).
+1. Kuidas jagunevad naftariigid regioonide kaupa?
+1. Millised on Lõuna-Aasia regiooni naftariigid?
+1. Tunnus `Total.wealth` näitab riigi kõikide varade summat inimese kohta. Arvutage 
+keskmine varade maht inimese kohta üle kõigi riikide. (Vihje: lihtsalt keskmise võtmine annab
+kallutatud tulemusi, kuna rahvaarv riikides on erinev.)
+1. Arvutage nüüd keskmine varade maht elaniku kohta kõigis regioonides eraldi. Lisaks
+näidake sealjuures ära ka iga regiooni rahvaarv.
+1. Joonistage graafik, mis võrdleb riikide produtseeritud kapitali ja loodusvarades peituvat
+kapitali. Kas joonistub välja mingi trend?
+1. Proovige lisada pildile ka riikide sissetuleku grupid.
+1. Lisage pildile ka mõnede huvitavamate riikide nimed.
+1. Eralda andmestikust veerud `Region`, `Population`, `Natural.Capital`, `Intangible.Capital` ja
+`Produced.Capital`. Leia nagu ennegi iga regiooni keskmine inimese kohta kõigi sõna "Capital"
+sisaldava nimega suuruste jaoks. Kujuta tulemusi sobiva joonisega.
+
+
+

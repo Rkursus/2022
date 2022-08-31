@@ -1,0 +1,7 @@
+"nimi"	"sugu"	"vanus"	"tulemus"	"voistlus"
+"1"	"Laine"	"N"	20	NA	NA
+"2"	"Mari"	"N"	22	30.1	"jooks1"
+"3"	"Peeter"	"M"	30	22.5	"jooks1"
+"4"	"Peeter"	"M"	30	25.3	"jooks2"
+"5"	"Tiina"	"N"	25	18.4	"jooks2"
+"6"	"Toomas"	NA	NA	20.4	"jooks2"
