@@ -5,7 +5,7 @@
 theme:            jekyll-theme-minimal
 
 # Setup
-title:            "Rakendustarkvara: R, 2021 sügis"
+title:            "Rakendustarkvara: R, 2022 sügis"
 tagline:          LTMS.00.016
 url:              http://rkursus.github.io/
 paginate:         1
@@ -18,7 +18,7 @@ author:
 # Custom vars
 version:          1.0.0
 github:
-  repo:           http://rkursus.github.io/2021
+  repo:           http://rkursus.github.io/2022
 
 pages_list:       
   Praktikumid: '/praktikumid'
