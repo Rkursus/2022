@@ -250,7 +250,7 @@ setwd("C:/Users/mina/Rkursus/")
 
 Andmete sisselugemisel tuleks anda andmetabelile nimi (salvestada see mingi objektina), vastasel juhul andmestik trükitakse lihtsalt ekraanile ja sellega enam midagi muud teha ei saa: `r load("../data/andmed.RData")` 
 ```{r}
-naide1 <- read.table("https://github.com/Rkursus/2021/raw/master/data/esimene.txt", 
+naide1 <- read.table("https://github.com/Rkursus/2022/raw/master/data/esimene.txt", 
                      header = T, sep = "\t", dec = ",")
 ```
 
@@ -263,24 +263,24 @@ write.table(naide1, "failinimi.txt", sep = "\t")
 
 1. Vaata `read.table` käsu argumentide täielikku loetelu abifailist.
 
-1. Aadressil https://github.com/Rkursus/2021/tree/master/data/ leiad failid *tabel1.csv*, *tabel2*, *tabel3.txt*, *tabel4.tab*. Tutvu nendega (Notepadi vmt kasutades) ja proovi need seejärel R-i korrektselt sisse lugeda. Veendu, et R-is olevates tabelites on sama palju veerge kui originaalandmestikes.
+1. Aadressil https://github.com/Rkursus/2022/tree/master/data/ leiad failid *tabel1.csv*, *tabel2*, *tabel3.txt*, *tabel4.tab*. Tutvu nendega (Notepadi vmt kasutades) ja proovi need seejärel R-i korrektselt sisse lugeda. Veendu, et R-is olevates tabelites on sama palju veerge kui originaalandmestikes.
 
-1. USA riiklikud institutsioonid võimaldavad päris sageli andmekogudele vaba ligipääsu. Selles aines kasutame näidisandmestikena USA Rahvaloendusbüroo^[http://www.census.gov/data.html] poolt kogutud andmeid, millele saab ligi IPUMS-USA^[Steven Ruggles, J. Trent Alexander, Katie Genadek, Ronald Goeken, Matthew B. Schroeder, and Matthew Sobek. Integrated Public Use Microdata Series: Version 5.0 [Machine-readable database]. Minneapolis, MN: Minnesota Population Center [producer and distributor], 2010.] liidese kaudu^[https://usa.ipums.org/usa-action/variables/group]. Aadressil https://github.com/Rkursus/2021/tree/master/data/ on fail *mass.txt*, milles on Massachusettsi osariigis ühe valikuuringuga kogutud andmed. Loe see R-i sisse, andmestiku objektile pane nimeks `andmed`. Tutvu ka tunnuste kirjeldusega: https://github.com/Rkursus/2021/raw/master/data/descr.txt. Andmestikuobjektist esmase ülevaate saamiseks kasuta käsku `str(andmed)`.
+1. USA riiklikud institutsioonid võimaldavad päris sageli andmekogudele vaba ligipääsu. Selles aines kasutame näidisandmestikena USA Rahvaloendusbüroo^[http://www.census.gov/data.html] poolt kogutud andmeid, millele saab ligi IPUMS-USA^[Steven Ruggles, J. Trent Alexander, Katie Genadek, Ronald Goeken, Matthew B. Schroeder, and Matthew Sobek. Integrated Public Use Microdata Series: Version 5.0 [Machine-readable database]. Minneapolis, MN: Minnesota Population Center [producer and distributor], 2010.] liidese kaudu^[https://usa.ipums.org/usa-action/variables/group]. Aadressil https://github.com/Rkursus/2022/tree/master/data/ on fail *mass.txt*, milles on Massachusettsi osariigis ühe valikuuringuga kogutud andmed. Loe see R-i sisse, andmestiku objektile pane nimeks `andmed`. Tutvu ka tunnuste kirjeldusega: https://github.com/Rkursus/2022/raw/master/data/descr.txt. Andmestikuobjektist esmase ülevaate saamiseks kasuta käsku `str(andmed)`.
 
 ```{r, echo = F, results = "hide"}
 
 
 # 2. loe sisse 4 andmetabelit
-tab1 <- read.table("https://github.com/Rkursus/2021/raw/master/data/tabel1.csv", sep = ",", header = TRUE)
-tab2 <- read.table("https://github.com/Rkursus/2021/raw/master/data/tabel2", sep = ";", header = TRUE)
-tab3 <- read.table("https://github.com/Rkursus/2021/raw/master/data/tabel3.txt", sep = "\t", header = TRUE, na.strings = ".")
-tab4 <- read.table("https://github.com/Rkursus/2021/raw/master/data/tabel4.tab", sep = " ", header = TRUE, quote = "")
+tab1 <- read.table("https://github.com/Rkursus/2022/raw/master/data/tabel1.csv", sep = ",", header = TRUE)
+tab2 <- read.table("https://github.com/Rkursus/2022/raw/master/data/tabel2", sep = ";", header = TRUE)
+tab3 <- read.table("https://github.com/Rkursus/2022/raw/master/data/tabel3.txt", sep = "\t", header = TRUE, na.strings = ".")
+tab4 <- read.table("https://github.com/Rkursus/2022/raw/master/data/tabel4.tab", sep = " ", header = TRUE, quote = "")
 tab1;tab2;tab3;tab4
  
 
 
 # 3.
-andmed <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", header = T, sep = "\t")
+andmed <- read.table("https://github.com/Rkursus/2022/raw/master/data/mass.txt", header = T, sep = "\t")
 ```
 
 
@@ -338,7 +338,7 @@ library(readxl)
 
 ## Andmete import programmide MS Excel, SAS, Stata, SPSS failidest
 ### MS Excel failid
-Lisapaketi `readxl` käsu `read_excel(.)` abil saab importida MS Exceli failide (nii *.xlsx* kui *xls*) töölehti. Salvesta  aadressilt https://github.com/Rkursus/2021/tree/master/data/ oma töökataloogi fail *tudengite-arv.xlsx*, mis sisaldab infot TÜ tudengite arvude kohta aastate lõikes. Ava esmalt fail MS Exceli abil ning vaata millised töölehed failis on. Seejärel vaata ka  R abil millised on töölehtede nimed ja impordi teine tööleht, millel on andmed avatud ülikooli õpilaste arvude kohta. 
+Lisapaketi `readxl` käsu `read_excel(.)` abil saab importida MS Exceli failide (nii *.xlsx* kui *xls*) töölehti. Salvesta  aadressilt https://github.com/Rkursus/2022/tree/master/data/ oma töökataloogi fail *tudengite-arv.xlsx*, mis sisaldab infot TÜ tudengite arvude kohta aastate lõikes. Ava esmalt fail MS Exceli abil ning vaata millised töölehed failis on. Seejärel vaata ka  R abil millised on töölehtede nimed ja impordi teine tööleht, millel on andmed avatud ülikooli õpilaste arvude kohta. 
 
 ```{r, eval=FALSE}
 list.files() # vaata, mis nimega failid on töökaustas
@@ -356,7 +356,7 @@ str(tabel)
 
 
 ### SAS, Stata ja SPSS failid
-Programmide SAS, Stata ja SPSS failide importimiseks saab kasutada paketi `haven` vastavaid funktsioone `read_sas(.), read_stata(.)` ja `read_spss(.)`. Salvesta  aadressilt https://github.com/Rkursus/2021/tree/master/data/ oma töökataloogi kolm faili nimega *effort* ja loe need R-i:
+Programmide SAS, Stata ja SPSS failide importimiseks saab kasutada paketi `haven` vastavaid funktsioone `read_sas(.), read_stata(.)` ja `read_spss(.)`. Salvesta  aadressilt https://github.com/Rkursus/2022/tree/master/data/ oma töökataloogi kolm faili nimega *effort* ja loe need R-i:
 ```{r, eval=FALSE}
 library(haven)
 andmestik_SAS <- read_sas("effort.sas7bdat")
@@ -378,7 +378,7 @@ R-i andmestiku saab `haven` paketi abil ka eksportida vaadeldud programmide andm
 
 1. Impordi failist *tudengite-arv.xlsx* viimane tööleht *kokku*, kus on tudengite arvud aastate lõikes (liidetud statsionaar ja avatud ülikool). Vaata esmalt ka abilehte kasutatava funktsiooni kohta: `?read_excel`
 ```{r, eval=FALSE, echo = F}
-download.file("https://github.com/Rkursus/2021/raw/master/data/tudengite-arv.xlsx", "tudengite-arv.xlsx")
+download.file("https://github.com/Rkursus/2022/raw/master/data/tudengite-arv.xlsx", "tudengite-arv.xlsx")
 
 kokku <- read_excel("praks1import/tudengite-arv.xlsx", sheet = "kokku")
 kokku <- read_excel("praks1import/tudengite-arv.xlsx", sheet = "kokku", col_names = F)
