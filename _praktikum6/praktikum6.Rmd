@@ -14,7 +14,7 @@ editor_options:
 ```{r, include=FALSE, warning=FALSE}
 library(reshape2)
 library(ggplot2)
-link <- "https://github.com/Rkursus/2021/raw/master/data/"
+link <- "https://github.com/Rkursus/2022/raw/master/data/"
 mk <- read.table(paste0(link, "maakonnad.txt"), sep = " ", header=T)
 
 

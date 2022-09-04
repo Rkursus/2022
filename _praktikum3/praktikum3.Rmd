@@ -23,7 +23,7 @@ library(ggplot2)
 
 Impordime uuesti andmestiku, mida korra kasutasime ka eelmises praktikumis (Massachusettsi andmestik), ja vaatame andmestikust ülevaadet
 ```{r, results='hide'}
-andmed <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", 
+andmed <- read.table("https://github.com/Rkursus/2022/raw/master/data/mass.txt", 
                      header = T, sep = "\t")
 str(andmed)
 ```
@@ -225,7 +225,7 @@ by(valik5$WAGP, valik5$SEX, mean, na.rm = T)
 Et teada saada, mitu erinevat väärtust antud faktortunnusel võib üldse olla, kasutatakse käsku `levels(.)`. Sealjuures ei pruugi kõiki faktori väärtustasemeid antud andmetes üldse esineda:
 ```{r}
 # loeme andmestiku uuesti sisse, tekitades faktor-tunnused
-andmed1 <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", 
+andmed1 <- read.table("https://github.com/Rkursus/2022/raw/master/data/mass.txt", 
                      header = T, sep = "\t", stringsAsFactors = T)
 # tekitame uuesti alamandmestiku
 mehed1 <- andmed1[andmed1$SEX == "Male",]

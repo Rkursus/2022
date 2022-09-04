@@ -143,7 +143,7 @@ Läbitud teemade kordamiseks tee läbi järgmised ülesanded. Kasutatavas andmes
 
 ## Ülesanded
 
-1. Loe sisse andmestik WB.txt aadressilt https://github.com/Rkursus/2021/raw/master/data/. (NB! pane tähele kuidas
+1. Loe sisse andmestik WB.txt aadressilt https://github.com/Rkursus/2022/raw/master/data/. (NB! pane tähele kuidas
 on tähistatud tühjad lahtrid)
 1. Andmeid vaadates on näha, et osade riikide kohta on süstemaatiliselt andmed puudu.
 - Kui palju neid riike on?

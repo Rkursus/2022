@@ -47,14 +47,14 @@ while(a < 10) {
 
 ### Ülesanded
 1. Loe sisse Massachusetts'i andmestik:\newline
-`mass <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", sep = "\t", header = TRUE)` \newline
+`mass <- read.table("https://github.com/Rkursus/2022/raw/master/data/mass.txt", sep = "\t", header = TRUE)` \newline
 Kasutades tsüklit leia tabel, kus oleks üle 15 aastaste korral arvutatud ametialade  (`OCCP`) kaupa  keskmine ja summaarne nädala töötundide (`WKHP`) arv. Vaata ainult neid, kel on ametiala teada ja kes pole `OCCP`  järgi töötud.
 1. Tee sama tabel **dplyr** ja **data.table** pakettide käske kasutades; võrdle kulunud aega kasutades käsku `system.time({.})`.
 <!--1. Tee sama **plyr**,  **dplyr**  ja  **data.table** teegi käske kasutades; võrdle kulunud aega kasutades käsku `Sys.time(.)` või `system.time({.})`.-->
 
 
 ```{r eval=FALSE, include=FALSE}
-mass <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", sep = "\t", header = TRUE)
+mass <- read.table("https://github.com/Rkursus/2022/raw/master/data/mass.txt", sep = "\t", header = TRUE)
 
 #1 
 
@@ -166,11 +166,11 @@ table(ifelse(is.na(mass$WAGP), "palgatu", "palgaga")  )
 ### Ülesanne
 
 1. Loe sisse arstivisiitide andmestik: \newline
-`visiidid <- read.table("https://github.com/Rkursus/2021/raw/master/data/visiidid.txt", sep = "\t", header = TRUE)`\newline
+`visiidid <- read.table("https://github.com/Rkursus/2022/raw/master/data/visiidid.txt", sep = "\t", header = TRUE)`\newline
 `for`-tsüklit kasutades käi läbi kõik inimesed ning trüki ekraanile nende inimeste isikukoodid, kellel esimese ja viimase vererõhu mõõtmise vahe on > 5.
 
 ```{r, eval=FALSE, include=FALSE}
-visiidid <- read.table("https://github.com/Rkursus/2021/raw/master/data/visiidid.txt", sep = "\t",
+visiidid <- read.table("https://github.com/Rkursus/2022/raw/master/data/visiidid.txt", sep = "\t",
                        header = TRUE)
 
 str(visiidid)

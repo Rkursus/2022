@@ -38,7 +38,7 @@ Kõigi funktsioonide esimene argument on andmetabel, järgmised argumendid täps
 ## Paketi dplyr  käskude kasutamine
 Loeme kõigepealt sisse näiteandmestiku: Massachusettsi valikuuring
 ```{r, warning=FALSE, message=F}
-mass <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", sep = "\t", header = T)
+mass <- read.table("https://github.com/Rkursus/2022/raw/master/data/mass.txt", sep = "\t", header = T)
 ```
 Paketi installimine ja aktiveerimine:
 ```{r, warning=FALSE, message=F}
@@ -116,7 +116,7 @@ head(summarise(group_by(mass, SEX, MAR), keskpalk = mean(WAGP, na.rm = T), n = n
 ```{r, eval=FALSE, include=FALSE}
 # n()
 #This function is implemented specifically for each data source and can only be used from within summarise(), mutate() and filter().
-mass <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", sep = "\t", header=T)
+mass <- read.table("https://github.com/Rkursus/2022/raw/master/data/mass.txt", sep = "\t", header=T)
 mass$vanusgr <- cut(mass$AGEP, seq(0, 100, 5), include.lowest = T)
 
 summarise(group_by(filter(mass, AGEP > 15, AGEP < 86),  vanusgr, SEX), 
@@ -297,7 +297,7 @@ DT[, c("uus1", "uus2") := NULL][]
 1. Tekita tabel, kus oleks soo ja perekonnaseisu gruppides leitud keskmine vanus, vanuse standardhälve ja levinum haridustase.
 
 ```{r, eval = F, echo = F}
-mass <- read.table("https://github.com/Rkursus/2021/raw/master/data/mass.txt", header = T, sep = "\t")
+mass <- read.table("https://github.com/Rkursus/2022/raw/master/data/mass.txt", header = T, sep = "\t")
 dtmass <- as.data.table(mass)
 is.data.table(dtmass)
 

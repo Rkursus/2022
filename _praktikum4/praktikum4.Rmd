@@ -32,7 +32,7 @@ Oleme tutvunud, kuidas andmestikust saab eraldada alamhulki (nt ridu või veerge
 Vaatame siin näiteandmestikuna andmestikku `mk` (*maakonnad.txt*), mis sisaldab infot USA 5 osariigi mõnede maakondade kohta (425 maakonda). Loeme andmed sisse 
 <!--ja lisame tunnuse, mis näitab, kas maakonna sündimuskordaja väärtus ületab 2.1 piiri:-->
 ```{r,eval=FALSE}
-mk <- read.table("https://github.com/Rkursus/2021/raw/master/data/maakonnad.txt", sep = " ", header = TRUE)
+mk <- read.table("https://github.com/Rkursus/2022/raw/master/data/maakonnad.txt", sep = " ", header = TRUE)
 ```
 ```{r eval=FALSE, include=FALSE}
 # need read jätan praegu välja, sest see osa on samas praksis kus uue tunnuse lisamine, pole va vaja meenutust!
@@ -111,7 +111,7 @@ kokku[order(kokku$vanus, kokku$tulemus, decreasing = TRUE), ]
 ### Ülesanded
 
 1. Loe sisse kaks andmestikku ja tutvu nendega (dimensioon, tunnused):\
-`link <- "https://github.com/Rkursus/2021/raw/master/data/"`\
+`link <- "https://github.com/Rkursus/2022/raw/master/data/"`\
 `visiidid <- read.table(paste0(link, "visiidid.txt"), sep = "\t", header = TRUE)`\
 `inimesed <- read.table(paste0(link, "isikud.txt"), sep = "\t", header = TRUE)`
 
@@ -126,8 +126,8 @@ kokku[order(kokku$vanus, kokku$tulemus, decreasing = TRUE), ]
 
 ```{r, eval=FALSE, include=FALSE}
 #1 andmed sisse
-visiidid <- read.table("https://github.com/Rkursus/2021/raw/master/data/visiidid.txt", sep = "\t", header = TRUE)
-inimesed <- read.table("https://github.com/Rkursus/2021/raw/master/data/isikud.txt", sep = "\t", header = TRUE)
+visiidid <- read.table("https://github.com/Rkursus/2022/raw/master/data/visiidid.txt", sep = "\t", header = TRUE)
+inimesed <- read.table("https://github.com/Rkursus/2022/raw/master/data/isikud.txt", sep = "\t", header = TRUE)
 
 str(visiidid)
 str(inimesed)
@@ -227,7 +227,7 @@ table(factor(mktopelt[duplicated(mktopelt), "County"]))
 
 2. Vaata  visiitide ja isikukoodide ühendatud andmestikku. Kas arsti mitte külastanud isikute osakaal (protsentuaalselt) on suurem meeste või naiste hulgas?
 ```{r, eval=FALSE, include=FALSE}
-link <- "https://github.com/Rkursus/2021/raw/master/data/"
+link <- "https://github.com/Rkursus/2022/raw/master/data/"
 visiidid <- read.table(paste0(link, "visiidid.txt"), sep = "\t", header = TRUE)
 inimesed <- read.table(paste0(link, "isikud.txt"), sep = "\t", header = TRUE)
 
@@ -323,7 +323,7 @@ options <- vana
 ### Ülesanded
 
 1. Kasuta arstivisiitide ja isikute andmestiku ühte alamosa:\
-`link <- "https://github.com/Rkursus/2021/raw/master/data/"`\
+`link <- "https://github.com/Rkursus/2022/raw/master/data/"`\
 `valik <- read.table(paste0(link, "valik.txt"), sep = "\t", header = TRUE)`.
 Vaata andmestik üle `head(valik)`. Tegu on valikuga isikutest, tunnuste osas on lisatud visiidi järjekorranumber. 
     - Vii andmed laiale kujule, kus iga isiku jaoks oleks andmestikus üks rida, kus on kirjas isikukood, sugu, sünnikuupäev, vanus ning vererõhu väärtus esimesel ja teisel visiidil.
@@ -356,7 +356,7 @@ head(pikk)
 
 
 #2
-visiidid <- read.table("https://github.com/Rkursus/2021/raw/master/data/visiidid.txt", sep = "\t", header = TRUE)
+visiidid <- read.table("https://github.com/Rkursus/2022/raw/master/data/visiidid.txt", sep = "\t", header = TRUE)
 head(visiidid)
 
  
