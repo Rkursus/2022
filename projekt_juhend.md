@@ -8,7 +8,7 @@ layout: page
 **Projekt tuleb esitada hiljemalt**
 
 - **I rühm**:   TBD
-- **Mikrokraadiprogramm**:   TBD
+- **Mikrokraadiprogramm**: 23.10.2022 23:59
 - **II rühm**:  TBD
 
 Projektid esitage Moodle keskkonna kaudu. Kõikides saadetud töö failide nimedes peab kajastuma tudengi(te) nimi.
