@@ -22,7 +22,7 @@ Andmete importimine, väärtustetüübid ja teisendused, lisapakettide kasutamin
     * Tähtaeg:
 		* I rühm - 11.09.2022 kell 23:59.
 		* Mikrokraadi rühm - 11.09.2022 kell 23:59.
-		* II rühm - TBD
+		* II rühm - 06.11.2022 kell 23:59.
 
 
 ## Praktikum 3
@@ -42,7 +42,7 @@ Andmestike ühendamine, unikaalsed ja mitmekordsed elemendid, andmete sorteerimi
     * Tähtaeg:
 		* I rühm - 18.09.2022 kell 23:59.
 		* Mikrokraadi 18.09.2022 kell 23:59.
-		* II rühm - TBD
+		* II rühm - 13.11.2022 kell 23:59.
 
 
 ## Praktikum 5
@@ -67,7 +67,7 @@ Joonised `ggplot2`-ga jätkub - joonisele kihtide lisamine, skaalade muutmine, j
     * Tähtaeg:
 		* I rühm - 25.09.2022 kell 23:59.
 		* Mikrokraadi rühm - 25.09.2022 kell 23:59.
-		* II rühm - TBD
+		* II rühm - 20.11.2022 kell 23:59.
 
 ## Praktikum 7
 
@@ -86,7 +86,7 @@ Töötamine kuupäevadega ja sõnetöötlus paketiga `stringr`.
     * Tähtaeg:
 		* I rühm - 02.10.2022 kell 23:59.
 		* Mikrokraadi rühm - 02.10.2022 kell 23:59.
-		* II rühm - TBD
+		* II rühm - 27.11.2022 kell 23:59.
 	
 
 ## Praktikum 9
@@ -109,7 +109,7 @@ Tulemuste vormistamine pakettidega `knitr` ja `rmarkdown`.
     * Tähtaeg:
 		* I rühm - 09.10.2022 kell 23:59.
 		* Mikrokraadi rühm - 09.10.2022 kell 23:59.
-		* II rühm - TBD
+		* II rühm - 04.12.2022 kell 23:59.
 		
 		
 ## Lisamaterjali:
