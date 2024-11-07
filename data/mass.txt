@@ -1,4 +1,4 @@
-"id"	"AGEP"	"CIT"	"COW"	"DDRS"	"INTP"	"LANX"	"MAR"	"MARHT"	"MIG"	"MIL"	"SCHL"	"SEX"	"WAGP"	"WKHP"	"ESR"	"INDP"	"OCCP"	"PINCP"	"RAC1P"
+"N"	"id"	"AGEP"	"CIT"	"COW"	"DDRS"	"INTP"	"LANX"	"MAR"	"MARHT"	"MIG"	"MIL"	"SCHL"	"SEX"	"WAGP"	"WKHP"	"ESR"	"INDP"	"OCCP"	"PINCP"	"RAC1P"
 "1"	1	90	"Born in the U.S."	NA	"Yes"	0	"No, speaks only English"	"Divorced"	"Two times"	"Yes, same house (nonmovers)"	"Yes, on active duty in the past, but not during the last 12"	"Regular high school diploma"	"Female"	0	NA	"Not in labor force"	NA	NA	10700	"White alone"
 "2"	2	49	"Born in the U.S."	"Local government employee (city, county, etc.)"	"No"	50	"No, speaks only English"	"Never married or under 15 years old"	NA	"Yes, same house (nonmovers)"	"No, never served in the military"	"GED or alternative credential"	"Male"	25000	40	"Civilian employed, at work"	"EDU-ELEMENTARY AND SECONDARY SCHOOLS"	"CLN-JANITORS AND BUILDING CLEANERS"	25050	"White alone"
 "3"	5	77	"Born in the U.S."	NA	"Yes"	0	"No, speaks only English"	"Widowed"	"One time"	"Yes, same house (nonmovers)"	"No, never served in the military"	"Regular high school diploma"	"Female"	0	NA	"Not in labor force"	NA	NA	13200	"White alone"
